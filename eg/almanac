@@ -1,0 +1,189 @@
+#!/usr/local/bin/perl
+
+# Display Sun and Moon rise and set for a pre-programmed position. The
+# -help option gets you help.
+
+use 5.006002;
+
+use strict;
+use warnings;
+
+use Astro::Coord::ECI;
+use Astro::Coord::ECI::Utils qw{ deg2rad };
+use Getopt::Long 2.33;
+use Pod::Usage;
+use POSIX qw{ strftime };
+use Time::Local;
+
+our $VERSION = '0.099';
+
+# TODO get rid of this once the per-class logic gets propagated.
+# local $Astro::Coord::ECI::Sun::Singleton = 0;
+
+Getopt::Long::Configure( 'pass_through' );	# Numbers may be negative.
+
+my %opt = (
+    format => '%d-%b-%Y %H:%M:%S UT',
+);
+
+GetOptions( \%opt,
+    qw{ classic! date=s format=s iterate_for_quarters|iterate-for-quarters!
+    model=s tomorrow! },
+    help => sub { pod2usage( { -verbose => 2 } ) },
+) or pod2usage( { -verbose => 0 } );
+
+my $sun_class = $opt{classic} ? 'Astro::Coord::ECI::Sun' :
+    'Astro::Coord::ECI::VSOP87D::Sun';
+
+{
+    ( my $fn = "$sun_class.pm" ) =~ s< :: ></>smxg;
+    require $fn;
+}
+
+my @args = @ARGV;
+@args
+    or not defined $ENV{ALMANAC_POSITION}
+    or @args = split '\s+', $ENV{ALMANAC_POSITION};
+@args
+    or @args = ( 38.898748, -77.037684, 16.68 );
+
+#	Stash position where it's convenient.
+
+my ( $lat, $lon, $hgt ) = @args;
+
+#	Start time is the previous midnight. Unless -tomorrow is
+#	set, in which case it's the next midnight.
+
+my $start;
+if ( defined $opt{date} ) {
+    require Date::Manip;
+    $start = Date::Manip::UnixDate( $opt{date}, '%s' )
+	or die "Invalid date $opt{date}\n";
+} else {
+    $start = timelocal (0, 0, 0, (localtime)[3 .. 5]);
+    $start += 86400 if $opt{tomorrow};
+}
+
+#	The end time is the start time + 1 day.
+
+my $end = $start + 86400;
+
+#	Create an object representing our location. Remember that
+#	angles are in radians, and distance in kilometers.
+
+my $loc = Astro::Coord::ECI->geodetic(
+    deg2rad( $lat ), deg2rad( $lon ), $hgt/1000 );
+
+#	Generate the almanac data for the Sun and Moon if each is
+#	desired. We instantiate the luminary, call almanac() on it, and
+#	then throw it away.
+
+my @almanac = $sun_class->new(
+    iterate_for_quarters	=> $opt{iterate_for_quarters},
+    station			=> $loc,
+)->almanac( $start, $end );
+
+unless ( $opt{classic} ) {
+    foreach my $body ( qw{ Venus } ) {
+	my $class = "Astro::Coord::ECI::VSOP87D::$body";
+	( my $fn = "$class.pm" ) =~ s< :: ></>smxg;
+	require $fn;
+	push @almanac, $class->new(
+	    station	=> $loc,
+	)->almanac( $start, $end );
+    }
+}
+
+#	Display the time and the text description of the events, in
+#	order of increasing time.
+
+print "$sun_class\n";
+foreach (sort {$a->[0] <=> $b->[0]} @almanac) {
+    print strftime( $opt{format}, gmtime $_->[0] ), '  ',
+	ucfirst ($_->[3]), "\n";
+}
+
+__END__
+
+=head1 TITLE
+
+almanac - Generate almanac data for a given location
+
+=head1 SYNOPSIS
+
+ almanac       # The White House by default
+ almanac 52.07 4.29 4   # The Hague
+ almanac -help
+ almanac -version
+
+=head1 OPTIONS
+
+=head2 -classic
+
+If this Boolean option is asserted,
+L<Astro::Coord::ECI::Sun|Astro::Coord::ECI::Sun> is used for the
+almanac. Otherwise
+L<Astro::Coord::ECI::VSOP87D::Sun|Astro::Coord::ECI::VSOP87D::Sun> is
+used.
+
+The default is C<-noclassic>.
+
+=head2 -date=date_string
+
+This option specifies the date as a string that can be parsed by
+L<Date::Manip|Date::Manip>. If L<Date::Manip|Date::Manip> can not be
+loaded an error occurs. If this option is specified, C<-tomorrow> is
+ignored.
+
+=head2 -format=strftime_format
+
+This option specifies the C<strftime> format used to display dates and
+times. The default is C<'%d-%b-%Y %H:%M:%S'>.
+
+=head2 -help
+
+This option displays the documentation for this script. The script then
+exits.
+
+=head2 -tomorrow
+
+Display data for tomorrow, rather than today.
+
+=head2 -version
+
+This option displays the version of this script. The script then exits.
+
+=head1 DETAILS
+
+This Perl script displays today's solar almanac for the position given
+on the command line, in latitude north of the Equator, longitude east of
+the prime meridian, and meters above sea level. If no position is given
+on the command line, the contents of environment variable
+C<ALMANAC_POSITION> are broken on spaces and used as the posiiton. If
+this environment variable is not found, the position of the White House
+in Washington DC USA is used.
+
+You can look a day ahead by specifying C<-tomorrow>.
+
+The format of the time output can be specified using the C<-format>
+option.
+
+=head1 AUTHOR
+
+Thomas R. Wyant, III F<wyant at cpan dot org>
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright (C) 2012-2018 by Thomas R. Wyant, III
+
+This program is free software; you can redistribute it and/or modify it
+under the same terms as Perl 5.10.0. For more details, see the full text
+of the licenses in the directory LICENSES.
+
+This program is distributed in the hope that it will be useful, but
+without any warranty; without even the implied warranty of
+merchantability or fitness for a particular purpose.
+
+=cut
+
+# ex: set textwidth=72 :

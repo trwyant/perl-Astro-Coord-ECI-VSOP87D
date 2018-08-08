@@ -1,0 +1,307 @@
+#!/usr/bin/env perl
+
+use 5.008;
+
+use strict;
+use warnings;
+
+use Data::Dumper;
+use Getopt::Long 2.33 qw{ :config auto_version };
+use Pod::Usage;
+
+our $VERSION = '0.000_01';
+
+my %opt;
+
+GetOptions( \%opt,
+    qw{ verbose! },
+    help => sub { pod2usage( { -verbose => 2 } ) },
+) or pod2usage( { -verbose => 0 } );
+
+
+# The result array is indexed by coordinate number (ic). The
+# values are references to arrays indexed by the degree of the time
+# variable (it). Each of these in turn is a reference to an array
+# containing the individual terms.
+
+my @rslt;
+my $valid_cutoff;
+
+while ( <> ) {
+    # 17x,i1,4x,a7,12x,i1,17x,i1,i7
+    my ( $iv, $bo, $ic, $vn, $it, $in ) = unpack 'x17A1x4A7x12A1A17a1a7';
+    $valid_cutoff ||= valid_cutoff( $iv, $bo );
+    $vn =~ s/ [^(]* . //smx; $vn =~ s/ [)] .* //smx;
+    $in =~ s/ \A \s+ //smx;
+    my $sn = sprintf '%s%d', substr( $vn, $ic - 1, 1 ), $it;
+    $opt{verbose} and warn <<"EOD";
+- iv : code of VSOP87 version               $iv
+- bo : name of body                         '$bo'
+- ic : index of coordinate                  $ic
+- it : degree alpha of time variable T      $it
+- sn : series name                          '$sn'
+- in : number of terms of series            $in
+EOD
+    my $tn = 0;
+    while ( <> ) {
+	my ( $ic, $it, $A, $B, $C ) = unpack 'x3A1A1x74A18A14A20';
+	$tn++;
+	{
+	    local $_;
+	    foreach ( $A, $B, $C ) {
+		s/ \A \s+ //smx;
+		$_ += 0;
+	    }
+	}
+	$opt{verbose} and warn <<"EOD";
+ic : index of coordinate                    $ic
+it : degree alpha of time variable T        $it
+A  : amplitude A                            $A
+B  : phase     B                            $B
+C  : frequency C                            $C
+id : identity                               '$sn $tn'
+EOD
+	$rslt[$ic][$it] ||= series_info( $iv, $bo, $sn, $in );
+	push @{ $rslt[$ic][$it]{terms} }, [ $A, $B, $C ];
+	--$in
+	    or last;
+    }
+}
+
+shift @rslt;
+{
+    local $Data::Dumper::Trailingcomma = 1;
+    local $Data::Dumper::Sortkeys = 1;
+    print Dumper( {
+	    model		=> \@rslt,
+	    valid_cutoff	=> $valid_cutoff,
+	} );
+}
+
+{
+    my %cutoff;
+    my @theory;
+
+    BEGIN {
+	# Cutoff information for each series
+	%cutoff = (
+	    VSOP87D	=> {
+		MERCURY	=> {
+		    Meeus	=> {
+			L0	=> 38,
+			L1	=> 16,
+			L2	=> 10,
+			L3	=> 8,
+			L4	=> 6,
+			L5	=> 1,
+			B0	=> 14,
+			B1	=> 11,
+			B2	=> 9,
+			B3	=> 7,
+			B4	=> 2,
+			R0	=> 13,
+			R1	=> 8,
+			R2	=> 7,
+			R3	=> 5,
+		    },
+		},
+		VENUS	=> {
+		    Meeus	=> {
+			L0	=> 24,
+			L1	=> 12,
+			L2	=> 8,
+			L3	=> 3,
+			L4	=> 3,
+			L5	=> 1,
+			B0	=> 9,
+			B1	=> 4,
+			B2	=> 4,
+			B3	=> 4,
+			B4	=> 1,
+			R0	=> 12,
+			R1	=> 3,
+			R2	=> 3,
+			R3	=> 1,
+			R4	=> 1,
+		    },
+		},
+		EARTH	=> {
+		    Meeus	=> {
+			L0	=> 64,
+			L1	=> 34,
+			L2	=> 20,
+			L3	=> 7,
+			L4	=> 3,
+			L5	=> 1,
+			B0	=> 5,
+			B1	=> 1,
+			R0	=> 40,
+			R1	=> 10,
+			R2	=> 6,
+			R3	=> 3,
+			R4	=> 1,
+		    },
+		},
+		MARS	=> {
+		    Meeus	=> {
+			L0	=> 69,
+			L1	=> 46,
+			L2	=> 33,
+			L3	=> 12,
+			L4	=> 8,
+			L5	=> 2,
+			B0	=> 16,
+			B1	=> 9,
+			B2	=> 7,
+			B3	=> 4,
+			B4	=> 3,
+			R0	=> 45,
+			R1	=> 27,
+			R2	=> 11,
+			R3	=> 6,
+			R4	=> 4,
+		    },
+		},
+	    },
+	);
+
+	# Theory index to name
+	@theory = map { "VSOP87$_" } '', qw{ A B C D E };
+    }
+
+    # Build the series information structure. The arguments are:
+    # $iv = The model version number (index into @theory)
+    # $bo = The body name
+    # $sn = The series name
+    # $in = The number of terms in the series, used for the 'full'
+    # cutoff.
+    sub series_info {
+	my ( $iv, $bo, $sn, $in ) = @_;
+
+	my $data = {
+	    cutoff	=> {
+		full	=> $in,
+	    },
+	    series	=> $sn,
+	    terms	=> [],
+	};
+
+	if ( my $cc = $cutoff{$theory[$iv]}{$bo} ) {
+	    foreach my $name ( keys %{ $cc } ) {
+		$data->{cutoff}{$name} = $cc->{$name}{$sn} || 0;
+	    }
+	}
+
+	return $data;
+    }
+
+    # Return a reference to a hash of valid cutoff names. The values are
+    # true. The arguments are:
+    # $iv = The model version number (index into @theory)
+    # $bo = The body name
+    sub valid_cutoff {
+	my ( $iv, $bo ) = @_;
+	my $cc = $cutoff{$theory[$iv]}{$bo} || {};
+	my %temp = map { $_ => 1 } keys %{ $cc };
+	$temp{full} ||= 1;
+	return \%temp;
+    }
+
+}
+
+__END__
+
+=head1 TITLE
+
+decode - Decode a VSOP87 file.
+
+=head1 SYNOPSIS
+
+ decode ref/VSOP87/VSOP87D.ear >Earth.PL
+ decode -help
+ decode -version
+
+=head1 OPTIONS
+
+=head2 -help
+
+This option displays the documentation for this script. The script then
+exits.
+
+=head2 -version
+
+This option displays the version of this script. The script then exits.
+
+=head1 DETAILS
+
+This Perl script reads a file containing VSOP87 model parameters, and
+writes a Perl structure containing the decoded parameters. Input is from
+the file specified on the command line, or from standard in if no such
+file is specified. Output is a L<Data::Dumper|Data::Dumper> dump to
+standard out.
+
+For the format of the output, see the documentation for
+L<__model_coefficients()|Astro::Coord::ECI::VSOP87D|/__model_coefficients> in
+L<Astro::Coord::ECI::VSOP87D|Astro::Coord::ECI::VSOP87D>.
+
+A tarball containing the relevant files is available at
+L<http://cdsarc.u-strasbg.fr/viz-bin/qcat?VI/81/>.
+
+__END__
+
+=head1 TITLE
+
+decode - Decode a VSOP87 file.
+
+=head1 SYNOPSIS
+
+ decode ref/VSOP87/VSOP87A.ear >Earth.PL
+ decode -help
+ decode -version
+
+=head1 OPTIONS
+
+=head2 -help
+
+This option displays the documentation for this script. The script then
+exits.
+
+=head2 -verbose
+
+If this Boolean option is asserted an annotated dump of each record is
+written to standard error.
+
+The default is C<-noverbose>.
+
+=head2 -version
+
+This option displays the version of this script. The script then exits.
+
+=head1 DETAILS
+
+This Perl script reads a file containing VSOP87 model parameters, and
+writes a Perl structure containing the decoded parameters. Input is from
+the file specified on the command line, or from standard in if no such
+file is specified. Output is a L< to standard out.
+
+=head1 AUTHOR
+
+Thomas R. Wyant, III F<wyant at cpan dot org>
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright (C) 2018 by Thomas R. Wyant, III
+
+This program is free software; you can redistribute it and/or modify it
+under the same terms as Perl 5.10.0. For more details, see the Artistic
+License 1.0 at
+L<http://www.perlfoundation.org/artistic_license_1_0>, and/or the Gnu
+GPL at L<http://www.gnu.org/licenses/old-licenses/gpl-1.0.txt>.
+
+This program is distributed in the hope that it will be useful, but
+without any warranty; without even the implied warranty of
+merchantability or fitness for a particular purpose.
+
+=cut
+
+# ex: set textwidth=72 :

@@ -1,0 +1,23 @@
+This directory contains various tools for maintaining this package, to
+wit:
+
+* README
+  This file.
+
+* decode
+  This Perl script reads one of the files that describes a VSOP87 model,
+  parses it, and deparses it into Perl using Data::Dumper. The input
+  file is specified on the command line. If none, the input is read from
+  standard in. Output goes to standard out.
+
+* ref-data.f
+  This Fortran 95 program is derived from example.f which is distributed
+  with the VSOP87 model data. It is used to generate the files in
+  t/data/ from the VSOP87 models and one or more time ranges.
+  Documentation is in comments at the beginning of the source.
+
+* reference
+  This Perl script attempts to mimic the output of example.f using Perl
+  classes. The --help option gets you documentation.
+
+# ex: set filetype=text textwidth=72 autoindent :
