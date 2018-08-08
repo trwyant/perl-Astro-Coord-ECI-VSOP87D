@@ -11,7 +11,7 @@ use Astro::Coord::ECI::Mixin qw{
     almanac almanac_hash next_quarter next_quarter_hash
 };
 use Astro::Coord::ECI::Utils qw{ SECSPERDAY };
-use Astro::Coord::ECI::VSOP87D qw{ cutoff __model time_set };
+use Astro::Coord::ECI::VSOP87D qw{ :mixin };
 
 use Carp;
 
@@ -44,13 +44,51 @@ sub __almanac_event_type_iterator {
 sub __model_definition {
     my ( undef, $key ) = @_;
     return {
+          'default_cutoff' => {
+                                'Meeus' => {
+                                             'B0' => 9,
+                                             'B1' => 4,
+                                             'B2' => 4,
+                                             'B3' => 4,
+                                             'B4' => 1,
+                                             'L0' => 24,
+                                             'L1' => 12,
+                                             'L2' => 8,
+                                             'L3' => 3,
+                                             'L4' => 3,
+                                             'L5' => 1,
+                                             'R0' => 12,
+                                             'R1' => 3,
+                                             'R2' => 3,
+                                             'R3' => 1,
+                                             'R4' => 1,
+                                             'name' => 'Meeus',
+                                           },
+                                'full' => {
+                                            'B0' => '210',
+                                            'B1' => '133',
+                                            'B2' => '59',
+                                            'B3' => '15',
+                                            'B4' => '5',
+                                            'B5' => '4',
+                                            'L0' => '367',
+                                            'L1' => '215',
+                                            'L2' => '70',
+                                            'L3' => '9',
+                                            'L4' => '5',
+                                            'L5' => '5',
+                                            'R0' => '330',
+                                            'R1' => '180',
+                                            'R2' => '63',
+                                            'R3' => '7',
+                                            'R4' => '3',
+                                            'R5' => '2',
+                                            'name' => 'full',
+                                          },
+                              },
           'model' => [
                        [
                          {
-                           'cutoff' => {
-                                         'Meeus' => 24,
-                                         'full' => '367',
-                                       },
                            'series' => 'L0',
                            'terms' => [
                                         [
@@ -1891,10 +1929,6 @@ sub __model_definition {
                                       ],
                          },
                          {
-                           'cutoff' => {
-                                         'Meeus' => 12,
-                                         'full' => '215',
-                                       },
                            'series' => 'L1',
                            'terms' => [
                                         [
@@ -2975,10 +3009,6 @@ sub __model_definition {
                                       ],
                          },
                          {
-                           'cutoff' => {
-                                         'Meeus' => 8,
-                                         'full' => '70',
-                                       },
                            'series' => 'L2',
                            'terms' => [
                                         [
@@ -3334,10 +3364,6 @@ sub __model_definition {
                                       ],
                          },
                          {
-                           'cutoff' => {
-                                         'Meeus' => 3,
-                                         'full' => '9',
-                                       },
                            'series' => 'L3',
                            'terms' => [
                                         [
@@ -3388,10 +3414,6 @@ sub __model_definition {
                                       ],
                          },
                          {
-                           'cutoff' => {
-                                         'Meeus' => 3,
-                                         'full' => '5',
-                                       },
                            'series' => 'L4',
                            'terms' => [
                                         [
@@ -3422,10 +3444,6 @@ sub __model_definition {
                                       ],
                          },
                          {
-                           'cutoff' => {
-                                         'Meeus' => 1,
-                                         'full' => '5',
-                                       },
                            'series' => 'L5',
                            'terms' => [
                                         [
@@ -3458,10 +3476,6 @@ sub __model_definition {
                        ],
                        [
                          {
-                           'cutoff' => {
-                                         'Meeus' => 9,
-                                         'full' => '210',
-                                       },
                            'series' => 'B0',
                            'terms' => [
                                         [
@@ -4517,10 +4531,6 @@ sub __model_definition {
                                       ],
                          },
                          {
-                           'cutoff' => {
-                                         'Meeus' => 4,
-                                         'full' => '133',
-                                       },
                            'series' => 'B1',
                            'terms' => [
                                         [
@@ -5191,10 +5201,6 @@ sub __model_definition {
                                       ],
                          },
                          {
-                           'cutoff' => {
-                                         'Meeus' => 4,
-                                         'full' => '59',
-                                       },
                            'series' => 'B2',
                            'terms' => [
                                         [
@@ -5495,10 +5501,6 @@ sub __model_definition {
                                       ],
                          },
                          {
-                           'cutoff' => {
-                                         'Meeus' => 4,
-                                         'full' => '15',
-                                       },
                            'series' => 'B3',
                            'terms' => [
                                         [
@@ -5579,10 +5581,6 @@ sub __model_definition {
                                       ],
                          },
                          {
-                           'cutoff' => {
-                                         'Meeus' => 1,
-                                         'full' => '5',
-                                       },
                            'series' => 'B4',
                            'terms' => [
                                         [
@@ -5613,10 +5611,6 @@ sub __model_definition {
                                       ],
                          },
                          {
-                           'cutoff' => {
-                                         'Meeus' => 0,
-                                         'full' => '4',
-                                       },
                            'series' => 'B5',
                            'terms' => [
                                         [
@@ -5644,10 +5638,6 @@ sub __model_definition {
                        ],
                        [
                          {
-                           'cutoff' => {
-                                         'Meeus' => 12,
-                                         'full' => '330',
-                                       },
                            'series' => 'R0',
                            'terms' => [
                                         [
@@ -7303,10 +7293,6 @@ sub __model_definition {
                                       ],
                          },
                          {
-                           'cutoff' => {
-                                         'Meeus' => 3,
-                                         'full' => '180',
-                                       },
                            'series' => 'R1',
                            'terms' => [
                                         [
@@ -8212,10 +8198,6 @@ sub __model_definition {
                                       ],
                          },
                          {
-                           'cutoff' => {
-                                         'Meeus' => 3,
-                                         'full' => '63',
-                                       },
                            'series' => 'R2',
                            'terms' => [
                                         [
@@ -8536,10 +8518,6 @@ sub __model_definition {
                                       ],
                          },
                          {
-                           'cutoff' => {
-                                         'Meeus' => 1,
-                                         'full' => '7',
-                                       },
                            'series' => 'R3',
                            'terms' => [
                                         [
@@ -8580,10 +8558,6 @@ sub __model_definition {
                                       ],
                          },
                          {
-                           'cutoff' => {
-                                         'Meeus' => 1,
-                                         'full' => '3',
-                                       },
                            'series' => 'R4',
                            'terms' => [
                                         [
@@ -8604,10 +8578,6 @@ sub __model_definition {
                                       ],
                          },
                          {
-                           'cutoff' => {
-                                         'Meeus' => 0,
-                                         'full' => '2',
-                                       },
                            'series' => 'R5',
                            'terms' => [
                                         [
@@ -8624,10 +8594,6 @@ sub __model_definition {
                          },
                        ],
                      ],
-          'valid_cutoff' => {
-                              'Meeus' => 1,
-                              'full' => 1,
-                            },
         }->{$key};
 }
 

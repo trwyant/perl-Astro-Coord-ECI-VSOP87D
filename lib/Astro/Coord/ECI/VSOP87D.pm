@@ -12,8 +12,11 @@ use Astro::Coord::ECI::Utils qw{
 use Exporter qw{ import };
 use Carp;
 use POSIX qw{ floor };
+use Storable qw{ dclone };
 
 use constant DAYS_PER_JULIAN_MILENNIUM	=> 365250;
+use constant HASH_REF	=> ref {};
+use constant SUN_CLASS	=> __PACKAGE__ . '::Sun';
 
 BEGIN {
     __PACKAGE__->can( 'DEBUG' )
@@ -22,30 +25,56 @@ BEGIN {
 
 our $VERSION = '0.000_01';
 
-our @EXPORT_OK = qw{ cutoff __model time_set };
+our @EXPORT_OK = qw{
+    SUN_CLASS
+    cutoff cutoff_definition time_set
+    __get_attr __model
+};
 our %EXPORT_TAGS = (
     mixin	=> \@EXPORT_OK,
 );
+
+# We want to ensure SUN_CLASS is loaded because it is our default Sun
+# implementation, but we do it at run time to avoid a circular
+# dependency.
+{
+    ( my $fn = SUN_CLASS . '.pm' ) =~ s< :: ></>smxg;
+    require $fn;
+}
 
 sub time_set {
     my ( $self ) = @_;
     my $time = $self->dynamical();
     my $cutoff = $self->cutoff();
+    my $cutoff_def = $self->cutoff_definition();
+    my $sun = $self->isa( SUN_CLASS ) ? $self : $self->get( 'sun' );
 
     DEBUG
-	and printf <<'EOD', ref $self, julianday( $time );
+	and printf <<'EOD', ref $self, ref $sun, julianday( $time );
 
+%s
 %s
 JDE = %.5f
 EOD
 
     my $T = jcent2000( $time );
-    my ( $Lb, $Bb, $Rb, $Lpb, $Bpb, $Rpb ) = $self->__model( $time,
+
+    my ( $Lb, $Bb, $Rb ) = $self->__model( $time,
 	cutoff	=> $cutoff,
+	cutoff_definition	=> $cutoff_def,
     );
-    my ( $Le, $Be, $Re, $Lpe, $Bpe, $Rpe ) = __PACKAGE__->__model( $time,
-	cutoff	=> $cutoff,
-    );
+
+    my ( $Le, $Be, $Re );
+
+    if ( my $code = $sun->can( 'cutoff_definition' ) ) {
+	( $Le, $Be, $Re ) = __PACKAGE__->__model( $time,
+	    cutoff	=> $cutoff,
+	    cutoff_definition	=> $code->( $sun, $cutoff ),
+	);
+    } else {
+	warn "Debug - \$Rb is $Rb";
+	confess sprintf 'TODO Sun class %s not supported', ref $sun;
+    }
 
     DEBUG
 	and printf <<'EOD', rad2deg( $Le ), rad2deg( $Be ), $Re;
@@ -97,9 +126,10 @@ EOD
 
 new JDE = %.5f
 EOD
-		( $Lb, $Bb, $Rb, $Lpb, $Bpb, $Rpb ) = $self->__model(
+		( $Lb, $Bb, $Rb ) = $self->__model(
 		    $time - $tau,
 		    cutoff	=> $cutoff,
+		    cutoff_definition	=> $cutoff_def,
 		);
 	    } else {
 
@@ -493,23 +523,54 @@ sub rad2hms {
 	$sgn, $hr, $min, $sec, $frc;
 }
 
-{
-    my %nan = map { $_ => 1 } qw{ Inf Infinity NaN };
-    sub cutoff {
-	my ( $self, @arg ) = @_;
-	my $attr = $self->{ __PACKAGE__() } ||= {
-	    cutoff	=> 'full',
-	};
-	if ( @arg ) {
-	    defined $arg[0]
-		or croak "cutoff must be defined";
-	    $self->__model_definition( 'valid_cutoff' )->{$arg[0]}
-		or croak "cutoff '$arg[0]' is unknown";
-	    $attr->{cutoff} = $arg[0];
-	    return $self;
+sub __get_attr {
+    my ( $self ) = @_;
+    ref $self
+	or confess 'Can not call as static method';
+    use YAML;
+    my $debug = $self->__model_definition( 'default_cutoff' );
+    HASH_REF eq ref $debug
+	or confess 'Invalid default_cutoff ', Dump( $debug ), " for $self";
+    return $self->{ __PACKAGE__() } ||= {
+	cutoff	=> 'full',
+	cutoff_definition	=> dclone( $self->__model_definition(
+		'default_cutoff' ) ),
+    };
+}
+
+sub cutoff {
+    my ( $self, @arg ) = @_;
+    my $attr = $self->__get_attr();
+    if ( @arg ) {
+	defined $arg[0]
+	    or croak "cutoff must be defined";
+	$self->cutoff_definition( $arg[0] )
+	    or croak "cutoff '$arg[0]' is unknown";
+	$attr->{cutoff} = $arg[0];
+	return $self;
+    } else {
+	return $attr->{cutoff};
+    }
+}
+
+sub cutoff_definition {
+    my ( $self, $name, @arg ) = @_;
+    defined $name
+	or $name = $self->cutoff();
+    my $attr = $self->__get_attr();
+    if ( @arg ) {
+	if ( defined $arg[0] ) {
+	    HASH_REF eq ref $arg[0]
+		or croak 'The cutoff definition value must be a hash ref';
+	    $attr->{cutoff_definition} = $arg[0];
 	} else {
-	    return $attr->{cutoff};
+	    $self->__model_definition( 'default_cutoff' )->{$name}
+		and croak "You may not delete cutoff definition '$name'";
+	    delete $attr->{cutoff_definition}{$name};
 	}
+	return $self;
+    } else {
+	return $attr->{cutoff_definition}{$name};
     }
 }
 
@@ -519,9 +580,21 @@ sub rad2hms {
 # AU and velocity in AU/day
 sub __model {
     my ( $self, $time, %arg ) = @_;
+
+    DEBUG
+	and printf <<'EOD',
+
+__model:
+    invocant: %s
+    cutoff: %s
+EOD
+    $self,
+    ( $arg{cutoff_definition} ?
+	( $arg{cutoff_definition}{name} || '<anonymous>' ) :
+	'<unspecified>' ),
+    ;
+
     my $jm = jcent2000( $time ) / 10;	# Meeus 32.1
-    $arg{debug}
-	and print STDERR "T: $jm\n";
     my $cutoff = $arg{cutoff} || 'full';
     my @p_vec;
     my @v_vec;
@@ -530,7 +603,9 @@ sub __model {
 	my $T = 1;
 	my $pos = my $vel = 0;
 	foreach my $series ( @{ $coord } ) {
-	    my $limit = $series->{cutoff}{$cutoff}
+	    my $limit = $arg{cutoff_definition} ?
+		( $arg{cutoff_definition}{$series->{series}} || 0 ) :
+		@{ $series->{terms} }
 		or next;
 	    --$limit;
 	    foreach my $inx ( 0 .. $limit ) {
@@ -564,10 +639,6 @@ sub __model_definition {
           'model' => [
                        [
                          {
-                           'cutoff' => {
-                                         'Meeus' => 64,
-                                         'full' => '559',
-                                       },
                            'series' => 'L0',
                            'terms' => [
                                         [
@@ -3368,10 +3439,6 @@ sub __model_definition {
                                       ],
                          },
                          {
-                           'cutoff' => {
-                                         'Meeus' => 34,
-                                         'full' => '341',
-                                       },
                            'series' => 'L1',
                            'terms' => [
                                         [
@@ -5082,10 +5149,6 @@ sub __model_definition {
                                       ],
                          },
                          {
-                           'cutoff' => {
-                                         'Meeus' => 20,
-                                         'full' => '142',
-                                       },
                            'series' => 'L2',
                            'terms' => [
                                         [
@@ -5801,10 +5864,6 @@ sub __model_definition {
                                       ],
                          },
                          {
-                           'cutoff' => {
-                                         'Meeus' => 7,
-                                         'full' => '22',
-                                       },
                            'series' => 'L3',
                            'terms' => [
                                         [
@@ -5920,10 +5979,6 @@ sub __model_definition {
                                       ],
                          },
                          {
-                           'cutoff' => {
-                                         'Meeus' => 3,
-                                         'full' => '11',
-                                       },
                            'series' => 'L4',
                            'terms' => [
                                         [
@@ -5984,10 +6039,6 @@ sub __model_definition {
                                       ],
                          },
                          {
-                           'cutoff' => {
-                                         'Meeus' => 1,
-                                         'full' => '5',
-                                       },
                            'series' => 'L5',
                            'terms' => [
                                         [
@@ -6020,10 +6071,6 @@ sub __model_definition {
                        ],
                        [
                          {
-                           'cutoff' => {
-                                         'Meeus' => 5,
-                                         'full' => '184',
-                                       },
                            'series' => 'B0',
                            'terms' => [
                                         [
@@ -6949,10 +6996,6 @@ sub __model_definition {
                                       ],
                          },
                          {
-                           'cutoff' => {
-                                         'Meeus' => 1,
-                                         'full' => '99',
-                                       },
                            'series' => 'B1',
                            'terms' => [
                                         [
@@ -7453,10 +7496,6 @@ sub __model_definition {
                                       ],
                          },
                          {
-                           'cutoff' => {
-                                         'Meeus' => 0,
-                                         'full' => '49',
-                                       },
                            'series' => 'B2',
                            'terms' => [
                                         [
@@ -7707,10 +7746,6 @@ sub __model_definition {
                                       ],
                          },
                          {
-                           'cutoff' => {
-                                         'Meeus' => 0,
-                                         'full' => '11',
-                                       },
                            'series' => 'B3',
                            'terms' => [
                                         [
@@ -7771,10 +7806,6 @@ sub __model_definition {
                                       ],
                          },
                          {
-                           'cutoff' => {
-                                         'Meeus' => 0,
-                                         'full' => '5',
-                                       },
                            'series' => 'B4',
                            'terms' => [
                                         [
@@ -7807,10 +7838,6 @@ sub __model_definition {
                        ],
                        [
                          {
-                           'cutoff' => {
-                                         'Meeus' => 40,
-                                         'full' => '526',
-                                       },
                            'series' => 'R0',
                            'terms' => [
                                         [
@@ -10446,10 +10473,6 @@ sub __model_definition {
                                       ],
                          },
                          {
-                           'cutoff' => {
-                                         'Meeus' => 10,
-                                         'full' => '292',
-                                       },
                            'series' => 'R1',
                            'terms' => [
                                         [
@@ -11915,10 +11938,6 @@ sub __model_definition {
                                       ],
                          },
                          {
-                           'cutoff' => {
-                                         'Meeus' => 6,
-                                         'full' => '139',
-                                       },
                            'series' => 'R2',
                            'terms' => [
                                         [
@@ -12619,10 +12638,6 @@ sub __model_definition {
                                       ],
                          },
                          {
-                           'cutoff' => {
-                                         'Meeus' => 3,
-                                         'full' => '27',
-                                       },
                            'series' => 'R3',
                            'terms' => [
                                         [
@@ -12763,10 +12778,6 @@ sub __model_definition {
                                       ],
                          },
                          {
-                           'cutoff' => {
-                                         'Meeus' => 1,
-                                         'full' => '10',
-                                       },
                            'series' => 'R4',
                            'terms' => [
                                         [
@@ -12822,10 +12833,6 @@ sub __model_definition {
                                       ],
                          },
                          {
-                           'cutoff' => {
-                                         'Meeus' => 0,
-                                         'full' => '3',
-                                       },
                            'series' => 'R5',
                            'terms' => [
                                         [
@@ -12847,10 +12854,6 @@ sub __model_definition {
                          },
                        ],
                      ],
-          'valid_cutoff' => {
-                              'Meeus' => 1,
-                              'full' => 1,
-                            },
         }->{$key};
 }
 

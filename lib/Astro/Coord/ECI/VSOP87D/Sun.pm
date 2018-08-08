@@ -7,7 +7,9 @@ use warnings;
 
 use base qw{ Astro::Coord::ECI::Sun };
 
-use Astro::Coord::ECI::VSOP87D qw{ cutoff time_set };
+use Astro::Coord::ECI::VSOP87D qw{
+    cutoff cutoff_definition __get_attr time_set
+};
 
 use Carp;
 
@@ -20,10 +22,44 @@ sub __model {
 sub __model_definition {
     my ( undef, $key ) = @_;
     return {
-	valid_cutoff	=> {
-	    Meeus	=> 1,
-	    full	=> 1,
-	},
+          'default_cutoff' => {
+                                'Meeus' => {
+                                             'B0' => 5,
+                                             'B1' => 1,
+                                             'L0' => 64,
+                                             'L1' => 34,
+                                             'L2' => 20,
+                                             'L3' => 7,
+                                             'L4' => 3,
+                                             'L5' => 1,
+                                             'R0' => 40,
+                                             'R1' => 10,
+                                             'R2' => 6,
+                                             'R3' => 3,
+                                             'R4' => 1,
+                                             'name' => 'Meeus',
+                                           },
+                                'full' => {
+                                            'B0' => '184',
+                                            'B1' => '99',
+                                            'B2' => '49',
+                                            'B3' => '11',
+                                            'B4' => '5',
+                                            'L0' => '559',
+                                            'L1' => '341',
+                                            'L2' => '142',
+                                            'L3' => '22',
+                                            'L4' => '11',
+                                            'L5' => '5',
+                                            'R0' => '526',
+                                            'R1' => '292',
+                                            'R2' => '139',
+                                            'R3' => '27',
+                                            'R4' => '10',
+                                            'R5' => '3',
+                                            'name' => 'full',
+                                          },
+                              },
     }->{$key};
 }
 

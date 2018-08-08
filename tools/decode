@@ -8,6 +8,7 @@ use warnings;
 use Data::Dumper;
 use Getopt::Long 2.33 qw{ :config auto_version };
 use Pod::Usage;
+use Storable qw{ dclone };
 
 our $VERSION = '0.000_01';
 
@@ -25,12 +26,13 @@ GetOptions( \%opt,
 # containing the individual terms.
 
 my @rslt;
-my $valid_cutoff;
+my %model_def;
 
 while ( <> ) {
     # 17x,i1,4x,a7,12x,i1,17x,i1,i7
     my ( $iv, $bo, $ic, $vn, $it, $in ) = unpack 'x17A1x4A7x12A1A17a1a7';
-    $valid_cutoff ||= valid_cutoff( $iv, $bo );
+    keys %model_def
+	or %model_def = cutoff_info( $iv, $bo );
     $vn =~ s/ [^(]* . //smx; $vn =~ s/ [)] .* //smx;
     $in =~ s/ \A \s+ //smx;
     my $sn = sprintf '%s%d', substr( $vn, $ic - 1, 1 ), $it;
@@ -61,7 +63,7 @@ B  : phase     B                            $B
 C  : frequency C                            $C
 id : identity                               '$sn $tn'
 EOD
-	$rslt[$ic][$it] ||= series_info( $iv, $bo, $sn, $in );
+	$rslt[$ic][$it] ||= series_info( \%model_def, $iv, $bo, $sn, $in );
 	push @{ $rslt[$ic][$it]{terms} }, [ $A, $B, $C ];
 	--$in
 	    or last;
@@ -69,13 +71,11 @@ EOD
 }
 
 shift @rslt;
+$model_def{model} = \@rslt;
 {
     local $Data::Dumper::Trailingcomma = 1;
     local $Data::Dumper::Sortkeys = 1;
-    print Dumper( {
-	    model		=> \@rslt,
-	    valid_cutoff	=> $valid_cutoff,
-	} );
+    print Dumper( \%model_def );
 }
 
 {
@@ -176,35 +176,32 @@ shift @rslt;
     # $in = The number of terms in the series, used for the 'full'
     # cutoff.
     sub series_info {
-	my ( $iv, $bo, $sn, $in ) = @_;
+	my ( $model_def, $iv, $bo, $sn, $in ) = @_;
+
+	$model_def->{default_cutoff}{full}{$sn} = $in || 0;
 
 	my $data = {
-	    cutoff	=> {
-		full	=> $in,
-	    },
 	    series	=> $sn,
 	    terms	=> [],
 	};
 
-	if ( my $cc = $cutoff{$theory[$iv]}{$bo} ) {
-	    foreach my $name ( keys %{ $cc } ) {
-		$data->{cutoff}{$name} = $cc->{$name}{$sn} || 0;
-	    }
-	}
-
 	return $data;
     }
 
-    # Return a reference to a hash of valid cutoff names. The values are
-    # true. The arguments are:
+    # Return cutoff info as name/value pairs. Designed to be called in
+    # list context.  The arguments are:
     # $iv = The model version number (index into @theory)
     # $bo = The body name
-    sub valid_cutoff {
+    sub cutoff_info {
 	my ( $iv, $bo ) = @_;
-	my $cc = $cutoff{$theory[$iv]}{$bo} || {};
-	my %temp = map { $_ => 1 } keys %{ $cc };
-	$temp{full} ||= 1;
-	return \%temp;
+	my $cc = dclone( $cutoff{$theory[$iv]}{$bo} || {} );
+	$cc->{full} ||= {};
+	foreach my $key ( keys %{ $cc } ) {
+	    $cc->{$key}{name} ||= $key;
+	}
+	return (
+	    default_cutoff	=> $cc,
+	);
     }
 
 }

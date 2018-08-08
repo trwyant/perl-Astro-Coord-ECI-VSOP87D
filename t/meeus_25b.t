@@ -13,7 +13,6 @@ BEGIN {
 }
 
 use Astro::Coord::ECI::VSOP87D::Sun;
-use Astro::Coord::ECI::VSOP87D::Venus;
 use Astro::Coord::ECI::Utils qw{ AU deg2rad rad2deg };
 use POSIX qw{ floor };
 use Test::More 0.88;	# Because of done_testing();
@@ -30,8 +29,14 @@ use Time::Local qw{ timegm };
 	use Astro::Coord::ECI::Utils qw{ AU rad2deg };
 	use Test::More 0.88;	# Because of done_testing();
 
+	# UNDOCUMENTED AND SUBJECT TO CHANGE WITHOUT NOTICE
+	my $cutoff_def =
+	    Astro::Coord::ECI::VSOP87D::Sun->__model_definition(
+	    'default_cutoff' )->{ main->CUTOFF() };
+
 	my ( $L, $B, $R ) = __PACKAGE__->__model( $time,
 	    cutoff	=> main->CUTOFF,
+	    cutoff_definition	=> $cutoff_def,
 	);
 	is sprintf( '%.4f', rad2deg( $L ) ), '19.9074', 'Ex 25b Earth L';
 	is sprintf( '%.4f', rad2deg( $B ) ), '-0.0002', 'Ex 25b Earth B';
