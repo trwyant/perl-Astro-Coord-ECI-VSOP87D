@@ -41,7 +41,7 @@ sub __almanac_event_type_iterator {
     };
 }
 
-sub __model_coefficients {
+sub __model_definition {
     my ( undef, $key ) = @_;
     return {
           'model' => [

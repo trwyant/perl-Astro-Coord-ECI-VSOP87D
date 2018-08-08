@@ -17,7 +17,7 @@ sub __model {
     return ( ( 0 ) x 6 );
 }
 
-sub __model_coefficients {
+sub __model_definition {
     my ( undef, $key ) = @_;
     return {
 	valid_cutoff	=> {

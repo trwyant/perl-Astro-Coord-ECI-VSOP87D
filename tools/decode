@@ -241,7 +241,7 @@ file is specified. Output is a L<Data::Dumper|Data::Dumper> dump to
 standard out.
 
 For the format of the output, see the documentation for
-L<__model_coefficients()|Astro::Coord::ECI::VSOP87D|/__model_coefficients> in
+L<__model_definition()|Astro::Coord::ECI::VSOP87D|/__model_definition> in
 L<Astro::Coord::ECI::VSOP87D|Astro::Coord::ECI::VSOP87D>.
 
 A tarball containing the relevant files is available at

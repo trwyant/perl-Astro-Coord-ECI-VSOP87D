@@ -503,7 +503,7 @@ sub rad2hms {
 	if ( @arg ) {
 	    defined $arg[0]
 		or croak "cutoff must be defined";
-	    $self->__model_coefficients( 'valid_cutoff' )->{$arg[0]}
+	    $self->__model_definition( 'valid_cutoff' )->{$arg[0]}
 		or croak "cutoff '$arg[0]' is unknown";
 	    $attr->{cutoff} = $arg[0];
 	    return $self;
@@ -525,7 +525,7 @@ sub __model {
     my $cutoff = $arg{cutoff} || 'full';
     my @p_vec;
     my @v_vec;
-    foreach my $coord ( @{ $self->__model_coefficients( 'model' ) } ) {
+    foreach my $coord ( @{ $self->__model_definition( 'model' ) } ) {
 	my $dT = my $exponent = 0;
 	my $T = 1;
 	my $pos = my $vel = 0;
@@ -556,10 +556,10 @@ sub __model {
 
 # Static method
 # At this level we return the model for the Earth.
-sub __model_coefficients {
+sub __model_definition {
     my ( undef, $key ) = @_;
     __PACKAGE__ eq caller
-	or confess 'Programming error - __model_coefficients() must be overridden';
+	or confess 'Programming error - __model_definition() must be overridden';
     return {
           'model' => [
                        [
@@ -12869,7 +12869,7 @@ Astro::Coord::ECI::VSOP87D - Implement the VSOP87D position model.
  use base qw{ Astro::Coord::ECI };
  use Astro::Coord::ECI::VSOP87D qw{ cutoff time_set };
 
- sub __model_coefficients {
+ sub __model_definition {
      return [
          # VSOP87D coefficients as digested from the distro by
 	 # tools/decode
@@ -12884,7 +12884,7 @@ consistent with the L<Astro::Coord::ECI|Astro::Coord::ECI> hierarchy.
 To use this module, subclass a member of the
 L<Astro::Coord::ECI|Astro::Coord::ECI> hierarchy and import
 L<cutoff()|/cutoff> and L<time_set()|/time_set> from this module. You
-must also provide a L<__model_coefficients()|/__model_coefficients>
+must also provide a L<__model_definition()|/__model_definition>
 method that returns the model parameters you wish to implement.
 
 =head1 METHODS
@@ -12939,7 +12939,7 @@ revoked without notice at any time. Documentation is for the benefit of
 the author.
 
 This static method executes the VSOP87D model returned by
-C<< $class->__model_coefficients() >>, and returns the computed state
+C<< $class->__model_definition() >>, and returns the computed state
 vector. The components of the state vector are Cartesian X, Y, and Z in
 kilometers, and the associated velocities in kilometers per second.
 
@@ -12962,7 +12962,7 @@ useful at the moment is written to standard error.
 
 This method is exportable, either by name or via the C<:mixin> tag.
 
-=head2 __model_coefficients
+=head2 __model_definition
 
  my $model = $class->__vsop87_model()
 
