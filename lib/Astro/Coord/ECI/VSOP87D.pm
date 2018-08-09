@@ -7,7 +7,8 @@ use warnings;
 
 use Astro::Coord::ECI::Utils qw{
     AU PI SECSPERDAY
-    asin deg2rad jcent2000 julianday mod2pi rad2deg tan
+    asin deg2rad jcent2000 julianday mod2pi
+    rad2deg rad2dms rad2hms tan
 };
 use Exporter qw{ import };
 use Carp;
@@ -479,48 +480,6 @@ EOD
 	    $delta_eps );
     }
 
-}
-
-sub rad2dms {
-    my ( $rad, $dp ) = @_;
-    defined $dp
-	or $dp = 3;
-    my $sec = rad2deg( $rad ) * 3600;
-    ( $sec, my $sgn ) = $sec < 0 ? ( - $sec, '-' ) : ( $sec, '' );
-    my $frc = sprintf "%.${dp}f", $sec;
-    $frc =~ s/ [^.]* //smx;
-    $sec = floor( $sec );
-    my $min = floor( $sec / 60 );
-    $sec %= 60;
-    my $deg = floor( $min / 60 );
-    $min %= 60;
-    $deg or $min
-	or return sprintf q<%s%d"%s>, $sgn, $sec, $frc;
-    $deg
-	or return sprintf q<%s%d'%02d"%s>, $sgn, $sec, $frc;
-    return sprintf qq<%s%d°%02d'%02d"%s>,
-	$sgn, $deg, $min, $sec, $frc;
-}
-
-sub rad2hms {
-    my ( $rad, $dp ) = @_;
-    defined $dp
-	or $dp = 3;
-    my $sec = $rad * 12 / PI * 3600;
-    ( $sec, my $sgn ) = $sec < 0 ? ( - $sec, '-' ) : ( $sec, '' );
-    my $frc = sprintf "%.${dp}f", $sec;
-    $frc =~ s/ [^.]* //smx;
-    $sec = floor( $sec );
-    my $min = floor( $sec / 60 );
-    $sec %= 60;
-    my $hr = floor( $min / 60 );
-    $min %= 60;
-    $hr or $min
-	or return sprintf q<%s%ds%s>, $sgn, $sec, $frc;
-    $hr
-	or return sprintf q<%s%dm%02ds%s>, $sgn, $sec, $frc;
-    return sprintf qq<%s%dh%02dm%02ds%s>,
-	$sgn, $hr, $min, $sec, $frc;
 }
 
 sub __get_attr {
