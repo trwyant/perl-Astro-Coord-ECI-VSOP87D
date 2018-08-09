@@ -48,13 +48,13 @@ sub time_set {
     my $time = $self->dynamical();
     my $cutoff = $self->cutoff();
     my $cutoff_def = $self->cutoff_definition();
-    my $sun = $self->isa( SUN_CLASS ) ? $self : $self->get( 'sun' );
+    my $sun = $self->get( 'sun' );
 
     DEBUG
 	and printf <<'EOD', ref $self, ref $sun, julianday( $time );
 
-%s
-%s
+self = %s
+Sun = %s
 JDE = %.5f
 EOD
 
@@ -73,7 +73,6 @@ EOD
 	    cutoff_definition	=> $code->( $sun, $cutoff ),
 	);
     } else {
-	warn "Debug - \$Rb is $Rb";
 	confess sprintf 'TODO Sun class %s not supported', ref $sun;
     }
 
@@ -82,9 +81,9 @@ EOD
 
 Le = %.5f
 Be = %.5f
-Re = %.5f
+Re = %.6f
 EOD
-    my ( $L, $B, $R );
+    my ( $lambda, $beta, $Delta, $long_sym );
     if ( $Rb ) {		# Not the Sun
 
 	my $last_tau = 0;
@@ -95,7 +94,7 @@ EOD
 
 Lb = %.5f
 Bb = %.5f
-Rb = %.5f
+Rb = %.6f
 EOD
 
 	    # Meeus 33.1
@@ -105,10 +104,11 @@ EOD
 	    my $y = $Rb * $cosBb * sin( $Lb ) - $Re * $cosBe * sin( $Le );
 	    my $z = $Rb * sin( $Bb )          - $Re * sin( $Be );
 
-	    my $Delta = sqrt( $x * $x + $y * $y + $z * $z );
+	    $Delta = sqrt( $x * $x + $y * $y + $z * $z );
 
 	    use constant TAU_FACTOR => 0.005_775_518_3 * SECSPERDAY;
 	    my $tau = TAU_FACTOR * $Delta;
+
 	    DEBUG
 		and printf <<'EOD', $x, $y, $z, $Delta, $tau / SECSPERDAY;
 
@@ -135,50 +135,70 @@ EOD
 	    } else {
 
 		# Meeus 33.2
-		my $lambda = mod2pi( atan2( $y, $x ) );
-		my $xsq_ysq = $x * $x + $y * $y;
-		my $beta = atan2( $z, sqrt $xsq_ysq );
-
-		( $L, $B, $R ) = ( $lambda, $beta, sqrt( $xsq_ysq + $z * $z ) );
+		$lambda = mod2pi( atan2( $y, $x ) );
+		$beta = atan2( $z, sqrt( $x * $x + $y * $y ) );
+		$long_sym = '𝛌';
 		last;
 	    }
 	}
+
+	# Meeus corrects for abberation here for a planet, before
+	# conversion to FK5. It makes no real difference to the answer,
+	# since everything done to the latitude and longitude before
+	# conversion to equatorial is just addition and subtraction, and
+	# therefore commutes. But it plays merry Hell with the poor slob
+	# who is trying to verify code versus the worked examples,
+	# because it changes the intermediate results. Sigh.
+
+	# Abberation per Meeus 23.2
+	use constant CONSTANT_OF_ABBERATION	=> deg2rad(
+	    20.49552 / 3600 );
+	# Longitude of the Sun
+	my $Ls = mod2pi( $Le + PI );
+	# Eccentricity of the Earth's orbit
+	my $e = ( - 0.000_000_126_7 * $T - 0.000_042_037 ) * $T +
+	    0.016_708_634;
+	# Longitude of perihelion of the Earth's orbit
+	my $pi = deg2rad( ( 0.000_46 * $T + 1.71946 ) * $T + 102.93735 );
+
+	my $delta_lambda = ( ( $e * cos( $pi - $lambda ) - cos( $Ls -
+		    $lambda ) ) / cos $beta ) * CONSTANT_OF_ABBERATION;
+	my $delta_beta = - sin( $beta ) * ( sin( $Ls - $lambda ) - $e *
+	    sin( $pi - $lambda ) ) * CONSTANT_OF_ABBERATION;
+	$lambda += $delta_lambda;
+	$beta += $delta_beta;
+
+	DEBUG
+	    and printf <<'EOD',
+
+Abberation:
+𝚫𝛌 = %s
+𝛌 = %.5f
+  = %s
+𝚫𝛃 = %s
+𝛃 = %.5f
+  = %s
+EOD
+	rad2dms( $delta_lambda), rad2deg( $lambda ), rad2dms( $lambda ),
+	rad2dms( $delta_beta), rad2deg( $beta ), rad2dms( $beta );
+
+
     } else {			# The Sun
-	( $L, $B, $R ) = ( mod2pi( $Le + PI ), - $Be, $Re );
+	( $lambda, $beta, $Delta ) = ( mod2pi( $Le + PI ), - $Be, $Re );
+	$long_sym = '☉';
     }
 
-    $self->equatorial( __vsop87d_to_equatorial( $L, $B, $R, $time ) );
-    $self->equinox_dynamical( $time );
-    return $self;
-}
-
-# Convert the VSOP87D ecliptic position to equatorial
-# Input $lon, $lat, and $rng are radians, radians, and AU. $time is Perl
-# time.
-# Output ia right ascencion in radians, declination in radians, and
-# range in kilometars.
-sub __vsop87d_to_equatorial {
-    my ( $lon, $lat, $rng, $time ) = @_;
-
-    my $T = jcent2000( $time );
-
     DEBUG
-	and printf <<"EOD", julianday( $time );
+	and printf <<'EOD',
 
-JDE = %.5f
-
-Ecliptic position:
-L = $lon radians
-B = $lat radians
-R = $rng AU
+%s = %.6f
+𝛃 = %.6f
+  = %s
+𝚫 = %.6f
 EOD
+	$long_sym, rad2deg( $lambda ),
+	rad2deg( $beta ), rad2dms( $beta ), $Delta;
 
-    DEBUG
-	and printf <<'EOD', rad2deg( $lon ), rad2dms( $lat );
-
-☉ = %.6f
-𝛃 = %s
-EOD
 
     # Convert to FK5. Meeus says (ch. 25 pg 166) this is necessary for
     # high accuracy (though not if using his cutoff VSOP87D), though
@@ -186,53 +206,57 @@ EOD
     # VSOP87E.
 
     # Meeus 32.3
-    use constant DYN_TO_FK5_LINEAR	=> deg2rad( 1.397 );
-    use constant DYN_TO_FK5_QUADRATIC	=> deg2rad( 0.00031 );
-    use constant DYN_TO_FK5_DELTA_LON	=> - deg2rad( 0.09033 / 3600 );
-    use constant DYN_TO_FK5_FACTOR	=> deg2rad( 0.03916 / 3600 );
-    my $lambda_prime = $lon - ( DYN_TO_FK5_LINEAR +
-	DYN_TO_FK5_QUADRATIC * $T ) * $T;
-    my $factor = DYN_TO_FK5_FACTOR * ( cos( $lambda_prime ) - sin(
-	    $lambda_prime ) );
-    my $delta_lon = DYN_TO_FK5_DELTA_LON + $factor * tan( $lat );
-    my $delta_lat = $factor;
+    {
+	use constant DYN_TO_FK5_LINEAR	=> deg2rad( 1.397 );
+	use constant DYN_TO_FK5_QUADRATIC	=> deg2rad( 0.00031 );
+	use constant DYN_TO_FK5_DELTA_LON	=> - deg2rad( 0.09033 / 3600 );
+	use constant DYN_TO_FK5_FACTOR	=> deg2rad( 0.03916 / 3600 );
+	my $lambda_prime = $lambda - ( DYN_TO_FK5_LINEAR +
+	    DYN_TO_FK5_QUADRATIC * $T ) * $T;
+	my $factor = DYN_TO_FK5_FACTOR * ( cos( $lambda_prime ) - sin(
+		$lambda_prime ) );
+	my $delta_lambda = DYN_TO_FK5_DELTA_LON + $factor * tan( $beta );
+	my $delta_beta = $factor;
 
-    DEBUG and printf <<"EOD",
+	DEBUG and printf <<'EOD',
 
+Conversion to FK5
 𝛌' = %.2f
-𝚫☉ = %s
+𝚫%s = %s
 𝚫𝛃 = %s
 EOD
-	rad2deg( $lambda_prime ), rad2dms( $delta_lon, 5 ), rad2dms(
-	    $delta_lat );
+	    rad2deg( $lambda_prime ), $long_sym,
+	    rad2dms( $delta_lambda, 5 ), rad2dms( $delta_beta );
 
-    $lon += $delta_lon;
-    $lat += $delta_lat;
+	$lambda += $delta_lambda;
+	$beta += $delta_beta;
 
-    DEBUG
-	and printf <<"EOD",
+	DEBUG and printf <<'EOD',
 
-☉ = %.5f
+%s = %.5f
   = %s
 𝛃 = %.5f
   = %s
 EOD
-	rad2deg( $lon ), rad2dms( $lon ),
-	rad2deg( $lat ), rad2dms( $lat ),
-	;
+	    $long_sym, rad2deg( $lambda ), rad2dms( $lambda ),
+	    rad2deg( $beta ), rad2dms( $beta ),
+	    ;
+    }
 
     # Nutation
     my ( $delta_psi, $delta_eps ) = nutation_iau1980( $time, 3 );
+    $lambda += $delta_psi;
 
     DEBUG
 	and printf <<"EOD", rad2dms( $delta_psi ), rad2dms( $delta_eps );
 
+Nutation:
 𝚫𝛙 = %s
 𝚫𝛆 = %s
 EOD
 
     # Obliquity per Meeus 22.3
-    my $U = $T/100;
+    my $U = $T / 100;
     my $epsilon_0 = 0;
     $epsilon_0 = $epsilon_0 * $U + $_ for qw{ 2.45 5.79 27.87 7.12
     -39.05 -249.67 -51.38 1999.25 -1.55 -4680.93 84381.448 };
@@ -241,35 +265,46 @@ EOD
 
     DEBUG
 	and printf <<"EOD",
+
+Obliquity:
 𝛆₀ = %.7f
 𝛆 = %.7f
   = %s
 EOD
 	rad2deg( $epsilon_0 ), rad2deg( $epsilon ), rad2dms( $epsilon );
 
+    # TODO this works for the Sun, but for a planet I need to use 23.2,
+    # which uses the position of the Sun as well as the body.
+    # TODO For the Sun, Meeus corrects for abberation AFTER converting
+    # to FK5, but for a planet he corrects BEFORE converting to FK5.
+    # Grumble. Guess what I will do is implement that way and then
+    # (maybe) see how much difference it makes. The alternative is to
+    # have a completely distinct implementation for the Sun, which I
+    # detest.
+
     # Meeus 25.10
-    use constant ABBERATION_FACTOR => - deg2rad( 20.4898 / 3600 );
-    my $abberation = ABBERATION_FACTOR / $rng;
 
-    DEBUG
-	and printf <<'EOD', rad2dms( $abberation );
+    unless ( $Rb ) {	# The Sun.
+	use constant SOLAR_ABBERATION_FACTOR => - deg2rad( 20.4898 / 3600 );
+	my $delta_lambda = SOLAR_ABBERATION_FACTOR / $Delta;
+	$lambda += $delta_lambda;
 
-abberation = %s
+	DEBUG
+	    and printf <<'EOD',
+
+Abberation:
+𝚫𝛌 = %s
+𝛌 = %.5f
+  = %s
 EOD
-
-    my $lambda = $lon + $delta_psi + $abberation;
-
-    DEBUG
-	and printf <<'EOD', rad2dms( $lambda );
-
-𝛌 = %s
-EOD
+	rad2dms( $delta_lambda), rad2deg( $lambda ), rad2dms( $lambda );
+    }
 
     my $sin_eps = sin $epsilon;
     my $cos_eps = cos $epsilon;
     my $sin_lam = sin $lambda;
-    my $sin_bet = sin $lat;
-    my $cos_bet = cos $lat;
+    my $sin_bet = sin $beta;
+    my $cos_bet = cos $beta;
     my $alpha = mod2pi( atan2(
 	    $sin_lam * $cos_eps - $sin_bet / $cos_bet * $sin_eps,
 	    cos $lambda ) );	# Meeus 13.3
@@ -287,7 +322,10 @@ EOD
 	rad2deg( $alpha ), rad2hms( $alpha ),
 	rad2deg( $delta ), rad2dms( $delta, 2 );
 
-    return ( $alpha, $delta, $rng * AU );
+    $self->equatorial( $alpha, $delta, $Delta * AU );
+    $self->equinox_dynamical( $time );
+
+    return $self;
 }
 
 BEGIN {

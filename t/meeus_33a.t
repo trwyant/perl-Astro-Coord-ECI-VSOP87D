@@ -36,12 +36,8 @@ use Time::Local qw{ timegm };
     $venus->dynamical( $time );
     my ( $ra, $dec, $rng ) = $venus->equatorial();
 
-    TODO: {
-	local $TODO = 'Planetary equatorial not completely implemented';
-
-	is sprintf( '%.4f', rad2deg( $ra ) ), '316.1729', 'Ex 33a Venus RA';
-	is sprintf( '%.4f', rad2deg( $dec ) ), '-18.8880', 'Ex 33a Venus Decl';
-    }
+    is sprintf( '%.4f', rad2deg( $ra ) ), '316.1729', 'Ex 33a Venus RA';
+    is sprintf( '%.4f', rad2deg( $dec ) ), '-18.8880', 'Ex 33a Venus Decl';
     is sprintf( '%.5f', $rng / AU ), '0.91095', 'Ex 33a Venus Rng';
 }
 
