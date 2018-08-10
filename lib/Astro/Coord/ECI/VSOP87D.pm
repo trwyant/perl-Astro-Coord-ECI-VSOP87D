@@ -61,7 +61,6 @@ EOD
     my $T = jcent2000( $time );
 
     my ( $Lb, $Bb, $Rb ) = $self->__model( $time,
-	cutoff	=> $cutoff,
 	cutoff_definition	=> $cutoff_def,
     );
 
@@ -69,7 +68,6 @@ EOD
 
     if ( my $code = $sun->can( 'cutoff_definition' ) ) {
 	( $Le, $Be, $Re ) = __PACKAGE__->__model( $time,
-	    cutoff	=> $cutoff,
 	    cutoff_definition	=> $code->( $sun, $cutoff ),
 	);
     } else {
@@ -129,7 +127,6 @@ new JDE = %.5f
 EOD
 		( $Lb, $Bb, $Rb ) = $self->__model(
 		    $time - $tau,
-		    cutoff	=> $cutoff,
 		    cutoff_definition	=> $cutoff_def,
 		);
 	    } else {
