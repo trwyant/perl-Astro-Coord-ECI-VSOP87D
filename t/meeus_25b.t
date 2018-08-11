@@ -5,16 +5,12 @@ use 5.008;
 use strict;
 use warnings;
 
+use lib qw{ inc };
+use My::Module::Test;	# Must load before Astro::Coord::ECI::VSOP87D
+
 use constant CUTOFF	=> 'Meeus';
 
-BEGIN {
-    constant->import(
-	'Astro::Coord::ECI::VSOP87D::DEBUG' => $ENV{VSOP87D_DEBUG} );
-}
-
 use Astro::Coord::ECI::VSOP87D::Sun;
-use Astro::Coord::ECI::Utils qw{ AU deg2rad rad2deg };
-use POSIX qw{ floor };
 use Test::More 0.88;	# Because of done_testing();
 use Time::Local qw{ timegm };
 
@@ -26,7 +22,10 @@ use Time::Local qw{ timegm };
 	package
 	Astro::Coord::ECI::VSOP87D;
 
-	use Astro::Coord::ECI::Utils qw{ AU rad2deg };
+	use lib qw{ inc };
+	use My::Module::Test;
+
+	use Astro::Coord::ECI::Utils qw{ rad2deg };
 	use Test::More 0.88;	# Because of done_testing();
 
 	# UNDOCUMENTED AND SUBJECT TO CHANGE WITHOUT NOTICE
@@ -38,9 +37,12 @@ use Time::Local qw{ timegm };
 	    cutoff	=> main->CUTOFF,
 	    cutoff_definition	=> $cutoff_def,
 	);
-	is sprintf( '%.4f', rad2deg( $L ) ), '19.9074', 'Ex 25b Earth L';
-	is sprintf( '%.4f', rad2deg( $B ) ), '-0.0002', 'Ex 25b Earth B';
-	is sprintf( '%.5f', $R ), '0.99761', 'Ec 25b Earth R';
+	is_rad_deg $L, 19.907_372, 5, 'Ex 25b Earth L';
+	note 'The result differs from Meeus by 0.001 seconds of arc';
+	is_rad_deg $B, -0.000_179, 5, 'Ex 25b Earth B';
+	note 'The result differs from Meeus by less than 0.001 seconds of arc';
+	is_au_au   $R, 0.997_607_75, 6, 'Ex 25b Earth R';
+	note 'The result differs from Meeus by 3e-8 AU';
     }
 
     my $sun = Astro::Coord::ECI::VSOP87D::Sun->new();
@@ -50,9 +52,12 @@ use Time::Local qw{ timegm };
 
     my ( $ra, $dec, $rng ) = $sun->equatorial();
 
-    is sprintf( '%.4f', rad2deg( $ra ) ), '198.3782', 'Ex 25b Sun RA';
-    is sprintf( '%.4f', rad2deg( $dec ) ), '-7.7839', 'Ex 25b Sun Decl';
-    is sprintf( '%.5f', $rng / AU ), '0.99761', 'Ex 25b Sun Rng';
+    is_rad_deg $ra,  198.378179, 5, 'Ex 25b Sun RA';
+    note 'The result differs from Meeus by 0.001 seconds of right ascension';
+    is_rad_deg $dec,  -7.783872, 5, 'Ex 25b Sun Decl';
+    note 'The result differs from Meeus by 0.007 seconds of arc';
+    is_km_au   $rng, 0.997_607_75, 6, 'Ex 25b Sun Rng';
+    note 'The result differs from Meeus by 1e-7 AU';
 }
 
 done_testing;

@@ -7,10 +7,8 @@ use warnings;
 
 use constant CUTOFF	=> 'Meeus';
 
-BEGIN {
-    constant->import(
-	'Astro::Coord::ECI::VSOP87D::DEBUG' => $ENV{VSOP87D_DEBUG} );
-}
+use lib qw{ inc };
+use My::Module::Test;	# Must load before Astro::Coord::ECI::VSOP87D
 
 use Astro::Coord::ECI::VSOP87D::Venus;
 use Astro::Coord::ECI::Utils qw{ AU deg2rad rad2deg };
@@ -29,16 +27,22 @@ use Time::Local qw{ timegm };
 	cutoff	=> CUTOFF,
 	cutoff_definition	=> $cutoff_def,
     );
-    is sprintf( '%.4f', rad2deg( $L ) ), '26.1143', 'Ex 33a Venus L';
-    is sprintf( '%.4f', rad2deg( $B ) ), '-2.6207', 'Ex 33a Venus B';
-    is sprintf( '%.5f', $R ), '0.72460', 'Ec 32a Venus R';
+    is_rad_deg $L, 26.114_28,  5, 'Ex 33a Venus L';
+    note 'The result differs from Meeus by 0.014 arc seconds';
+    is_rad_deg $B, -2.620_70,  5, 'Ex 33a Venus B';
+    note 'The result differs from Meeus by 0.011 arc seconds';
+    is_au_au   $R,  0.724_603, 6, 'Ex 32a Venus R';
+    note 'The result differs from Meeus by 6e-8 AU';
 
     $venus->dynamical( $time );
     my ( $ra, $dec, $rng ) = $venus->equatorial();
 
-    is sprintf( '%.4f', rad2deg( $ra ) ), '316.1729', 'Ex 33a Venus RA';
-    is sprintf( '%.4f', rad2deg( $dec ) ), '-18.8880', 'Ex 33a Venus Decl';
-    is sprintf( '%.5f', $rng / AU ), '0.91095', 'Ex 33a Venus Rng';
+    is_rad_deg $ra,  316.172_91,  4, 'Ex 33a Venus RA';
+    note 'The result differs from Meeus by 0.14 arc seconds';
+    is_rad_deg $dec, -18.888_01,  4, 'Ex 33a Venus Decl';
+    note 'The result differs from Meeus by 0.07 arc seconds';
+    is_km_au   $rng,   0.910_947, 6, 'Ex 33a Venus Rng';
+    note 'The result differs from Meeus by 5e-8 AU';
 }
 
 done_testing;
