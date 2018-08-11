@@ -328,7 +328,8 @@ EOD
 BEGIN {
     my @model;
     open my $fh, '<', \<<'EOD' or die $!;
-# From http://hpiers.obspm.fr/eop-pc/models/nutations/nut_IAU1980.dat
+# From the Paris Observatory IERS Earth Orientation Center, specifically
+# http://hpiers.obspm.fr/eop-pc/models/nutations/nut_IAU1980.dat
 # lm is what Meeus calls M'
 # ls is the negative of what Meeus calls M
 # ---- below here is from the given link
@@ -364,6 +365,8 @@ BEGIN {
  -1  0  2  0  1    27.0      21.0       0.0     -10.0       0.0     
   0  2  0  0  0   182.6      17.0      -0.1       0.0       0.0     
   0  2  2 -2  2    91.3     -16.0       0.1       7.0       0.0     
+# The above differs from Meeus, who gives the equivalent of
+# 0 -2  2 -2  2    91.3     -16.0       0.1       7.0       0.0     
  -1  0  0  2  1    32.0      16.0       0.0      -8.0       0.0     
   0  1  0  0  1   386.0     -15.0       0.0       9.0       0.0     
   1  0  0 -2  1   -31.7     -13.0       0.0       7.0       0.0     
@@ -459,10 +462,42 @@ EOD
 	$row[1] = - $row[1];
 	push @model, \@row;
 	# NOTE that in Meeus' terms, the rows of the model are
-	# M, M', F, D, Omega, psi_const, psi_fact, eps_const, eps_fact
-	# 0  1   2  3  4      5          6         7          8
+	# M', M, F, D, Omega, psi_const, psi_fact, eps_const, eps_fact
+	# 0   1  2  3  4      5          6         7          8
     }
     close $fh;
+
+    # Debug aid: print the IAU 1980 nutation table in the format given
+    # in Meeus pg 145ff
+    my $fmt_coeff = sub {
+	my ( $row, $inx ) = @_;
+	my ( $const, $coeff ) = @{ $row }[ $inx, $inx + 1 ];
+	$const += 0;
+	$const
+	    or return '';
+	$coeff += 0;
+	$coeff
+	    or return sprintf '%+7d', $const;
+	return sprintf '%+7d %+6.1f T', $const, $coeff;
+    };
+    sub __debug_dump_iau1980_nutation_table {
+	print <<'EOD';
+                       𝚫𝛙               𝚫𝛆
+  D  M  M' F  𝛀 ---------------- ----------------
+EOD
+	foreach my $row ( @model ) {
+	    printf "%3d%3d%3d%3d%3d %-16s %-16s\n",
+	    $row->[3],	# D
+	    $row->[1],	# M
+	    $row->[0],	# M'
+	    $row->[2],	# F
+	    $row->[4],	# Omega
+	    $fmt_coeff->( $row, 5 ),	# Delta psi
+	    $fmt_coeff->( $row, 7 ),	# Delta epsilon
+	    ;
+	}
+	return;
+    }
 
     sub nutation_iau1980 {
 	my ( $time, $cutoff ) = @_;
@@ -492,7 +527,7 @@ EOD
 	my $Omega = ( ( $T / 450_000 + 0.002_070_8 ) * $T - 1_934.136_261
 	    ) * $T + 125.044_52;
 
-	# Convert to radians, and store
+	# Convert to radians, and store in same order as model source
 	my @arg = map { deg2rad( $_ ) } ( $M_prime, $M, $F, $D, $Omega );
 
 	my ( $delta_psi, $delta_eps ) = ( 0, 0 );
