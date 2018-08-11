@@ -78,19 +78,22 @@ my $loc = Astro::Coord::ECI->geodetic(
 #	desired. We instantiate the luminary, call almanac() on it, and
 #	then throw it away.
 
-my @almanac = $sun_class->new(
-    iterate_for_quarters	=> $opt{iterate_for_quarters},
-    station			=> $loc,
-)->almanac( $start, $end );
 
-unless ( $opt{classic} ) {
-    foreach my $body ( qw{ Venus } ) {
+my @almanac;
+
+if ( $opt{classic} ) {
+    my @almanac = $sun_class->new(
+	iterate_for_quarters	=> $opt{iterate_for_quarters},
+	station			=> $loc,
+    )->almanac( $start, $end );
+} else {
+    foreach my $body ( qw{ Sun Venus } ) {
 	my $class = "Astro::Coord::ECI::VSOP87D::$body";
 	( my $fn = "$class.pm" ) =~ s< :: ></>smxg;
 	require $fn;
 	push @almanac, $class->new(
 	    station	=> $loc,
-	)->almanac( $start, $end );
+	)->cutoff( 'Meeus' )->almanac( $start, $end );
     }
 }
 
