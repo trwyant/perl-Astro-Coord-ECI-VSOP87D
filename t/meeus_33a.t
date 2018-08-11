@@ -24,7 +24,6 @@ use Time::Local qw{ timegm };
 
     my ( $L, $B, $R ) = $venus->__model(
 	$time,
-	cutoff	=> CUTOFF,
 	cutoff_definition	=> $cutoff_def,
     );
     is_rad_deg $L, 26.114_28,  5, 'Ex 33a Venus L';

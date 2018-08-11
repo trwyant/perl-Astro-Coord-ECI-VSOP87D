@@ -34,7 +34,6 @@ use Time::Local qw{ timegm };
 	    'default_cutoff' )->{ main->CUTOFF() };
 
 	my ( $L, $B, $R ) = __PACKAGE__->__model( $time,
-	    cutoff	=> main->CUTOFF,
 	    cutoff_definition	=> $cutoff_def,
 	);
 	is_rad_deg $L, 19.907_372, 5, 'Ex 25b Earth L';
