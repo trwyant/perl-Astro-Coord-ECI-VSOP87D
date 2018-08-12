@@ -7,6 +7,8 @@ use warnings;
 
 use base qw{ Astro::Coord::ECI::Sun };
 
+use Astro::Coord::ECI::Mixin qw{ next_quarter };
+
 use Astro::Coord::ECI::VSOP87D qw{
     cutoff cutoff_definition __get_attr time_set
 };
@@ -122,6 +124,12 @@ a cutoff of C<25e-8>, though he actually uses this cutoff only for the
 L0 term.
 
 The default is C<0>, which uses the full theory.
+
+=head2 next_quarter
+
+This override of the superclass' method ignores the value of the
+C<'iterate_for_quarters'> attribute, and always iterates. The superclass
+uses an algorithm from Meeus if this attribute is false.
 
 =head1 SEE ALSO
 
