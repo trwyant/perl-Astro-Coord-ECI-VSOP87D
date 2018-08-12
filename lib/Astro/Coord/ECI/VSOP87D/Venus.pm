@@ -17,8 +17,6 @@ use Carp;
 
 our $VERSION = '0.000_01';
 
-sub period { return 584 * SECSPERDAY }
-
 sub __almanac_event_type_iterator {
     my ( $self, $station ) = @_;
 
@@ -8594,6 +8592,9 @@ sub __model_definition {
                          },
                        ],
                      ],
+          'name' => 'VSOP87D',
+          'sidereal_period' => '19414148.998',
+          'tropical_period' => '19413685.543',
         }->{$key};
 }
 

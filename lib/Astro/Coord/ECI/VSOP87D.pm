@@ -6,7 +6,7 @@ use strict;
 use warnings;
 
 use Astro::Coord::ECI::Utils qw{
-    AU PI SECSPERDAY
+    AU PI SECSPERDAY TWOPI
     asin deg2rad jcent2000 julianday mod2pi
     rad2deg rad2dms rad2hms tan
 };
@@ -28,7 +28,7 @@ our $VERSION = '0.000_01';
 
 our @EXPORT_OK = qw{
     SUN_CLASS
-    cutoff cutoff_definition time_set
+    cutoff cutoff_definition period time_set year
     __get_attr __model
 };
 our %EXPORT_TAGS = (
@@ -629,6 +629,33 @@ EOD
     }
     $p_vec[0] = mod2pi( $p_vec[0] );
     return ( @p_vec, @v_vec );
+}
+
+# Calculate the period of the orbit. The orbital velocity in radians per
+# Julian centutu is just the inverse of the coefficient of the constant
+# L1 term -- that is, the A value of the one with B and C both zero,
+# since that computes as A * cos( B + C * tau ) = A * cos( 0 ) = A
+#
+# So the tropical year is just TWOPI divided by this. But we want the
+# Siderial year, so we have to add in the precession. I found no
+# reference for this, but to a first approximation the additional angle
+# to travel is the solar year times the rate of precession, and the
+# siderial year is the solar year plus the additional distance divided
+# by the orbital velocity.
+#
+# But this calculation is done when the model parameters are built, and
+# period() just returns the resultant value.
+#
+# The rate of pecession is the IAU 2003 value, taken from fapa03.c.
+
+sub period {
+    my ( $self ) = @_;
+    return $self->__model_definition( 'sidereal_period' );
+}
+
+sub year {
+    my ( $self ) = @_;
+    return $self->__model_definition( 'tropical_period' );
 }
 
 # Static method
@@ -12856,6 +12883,9 @@ sub __model_definition {
                          },
                        ],
                      ],
+          'name' => 'VSOP87D',
+          'sidereal_period' => '31558149.764',
+          'tropical_period' => '31556925.183',
         }->{$key};
 }
 
@@ -12894,8 +12924,9 @@ method that returns the model parameters you wish to implement.
 
 =head1 METHODS
 
-This module supports the following methods, which are public unless
-documented otherwise:
+This module does not implement a class, and is better regarded as a
+mixin.  It supports the following methods, which are public and
+exportable unless documented otherwise.
 
 =head2 cutoff
 
@@ -12923,16 +12954,35 @@ The default is C<0>, which uses the full theory.
 
 This method is exportable, either by name or via the C<:mixin> tag.
 
+=head2 cutoff_definition
+
+This method reports, creates, and deletes cutoff definitions.
+
+The first argument is the name of the cutoff. If this is the only
+argument, a reference to a hash defining the named cutoff is returned.
+This return is a deep clone of the actual definition.
+
+If the second argument is C<undef>, the named cutoff is deleted. If the
+cutoff does not exist, the call does nothing. It is an error to try to
+delete built-in cutoffs C<'full'> and C<'Meeus'>.
+
+If the second argument is a reference to a hash, this defines or
+redefines a cutoff. The keys to the hash are the names of VSOP87D series
+(C<'L0'> through C<'L5'>, C<'B0'> through C<'B5'>, and C<'R0'> through
+C<'R5'>), and the value of each key is the number of terms of that
+series to use. If one of the keys is omitted or has a false value, that
+series is not used.
+
 =head2 nutation_iau1980
 
  my ( $delta_psi, $delta_epsilon ) =
      nutation_iau1980( $dynamical_time, $cutoff );
 
-This subroutine calculates the nutation in ecliptic longitude
-(C<$delta_psi>) and latitude (C<$delta_epsilon>) at the given dynamical
-time in seconds since the epoch (i.e. Perl time), according to the IAU
-1980 model. The C<$cutoff> argument is optional; if specified as a
-number larger than C<0>, terms whose amplitudes are smaller than the
+This subroutine (B<not> method) calculates the nutation in ecliptic
+longitude (C<$delta_psi>) and latitude (C<$delta_epsilon>) at the given
+dynamical time in seconds since the epoch (i.e. Perl time), according to
+the IAU 1980 model. The C<$cutoff> argument is optional; if specified as
+a number larger than C<0>, terms whose amplitudes are smaller than the
 cutoff (in milli arc seconds) are ignored. The Meeus version of the
 algorithm is specified by a value of C<3>. The default is C<0>.
 
@@ -12942,6 +12992,17 @@ source IAU C reference implementation of the algorithm, F<src/nut80.c>,
 with the minimum modifications necessary to make the C code into Perl
 code. This file is contained in
 L<http://www.iausofa.org/2018_0130_C/sofa_c-20180130.tar.gz>.
+
+=head2 period
+
+ $self->period()
+
+This method returns the sidereal period of the object, calculated from
+the coefficient of its first C<L1> term.
+
+The algorithm is the author's, and is a first approximation. That is. it
+is just the tropical period plus however long it takes the object to
+cover the amount of precession during the tropical year.
 
 =head2 time_set
 
@@ -12953,7 +13014,12 @@ time has been set.
 
 It returns the invocant.
 
-This method is exportable, either by name or via the C<:mixin> tag.
+=head2 year
+
+ $self->year()
+
+This method returns the tropical year of the object, calculated from
+the coefficient of its first C<L1> term.
 
 =head2 __model
 
@@ -12989,20 +13055,62 @@ This method is exportable, either by name or via the C<:mixin> tag.
 
 =head2 __model_definition
 
- my $model = $class->__vsop87_model()
+ my $model = $class->__model_definition( 'model' )
 
-This static method returns the terms of the VSOP87D model, expressed as
+This static method is B<private> to this package, and may be changed or
+revoked without notice at any time. Documentation is for the benefit of
+the author.
+
+This static method returns model-related information. The argument
+describes the information to return. The following are valid:
+
+=over
+
+=item default_cutoff
+
+This argument returns the default value of C<'cutoff_definition'> for a
+new object.
+
+=item model
+
+This argument returns the terms of the VSOP87D model, expressed as
 nested array references.
 
 The top level is indexed on the zero-based coordinate index (i.e. one
 less than the indices documented in F<vsop87.txt>. The next level is
 indexed on the exponent of C<T> represented, and is expected to be in
-the range C<0-5>.  The third level is the terms pertaining to the
-coordinate and power of T; each term is a reference to an array
-containing quantities A, B, and C to be plugged into the equation
-C<A * cos( B + C * T) * T ** n>.
+the range C<0-5>.
+
+The third level is a hash describing the individual series. It contains
+the following keys:
+
+=over
+
+=item series
+
+This is the name of the individual series (e.g. C<'L0'>.
+
+=item terms
+
+This is a reference to an array containing the terms of the series.
+Each term is a reference to an array containing quantities A, B, and C
+to be plugged into the equation C<A * cos( B + C * T) * T ** n>.
 
 C<T> is dynamical time in Julian millennia since J2000.0.
+
+=back
+
+=item sidereal_period
+
+This is the sidereal period in seconds, and is returned by period().
+=back
+
+=item tropical_period
+
+This is the tropical period, in seconds. As of this writing it is
+unused.
+
+=back
 
 This method is B<not> exportable. It is expected that each derived class
 will implement its own version of this method.

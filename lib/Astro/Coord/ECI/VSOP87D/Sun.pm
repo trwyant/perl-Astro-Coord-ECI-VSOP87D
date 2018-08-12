@@ -62,6 +62,9 @@ sub __model_definition {
                                             'name' => 'full',
                                           },
                               },
+          'name' => 'VSOP87D',
+          'sidereal_period' => '31558149.764',
+          'tropical_period' => '31556925.183',
     }->{$key};
 }
 

@@ -5,6 +5,7 @@ use 5.008;
 use strict;
 use warnings;
 
+use Astro::Coord::ECI::Utils qw{ SECSPERDAY TWOPI };
 use Data::Dumper;
 use Getopt::Long 2.33 qw{ :config auto_version };
 use Pod::Usage;
@@ -72,6 +73,8 @@ EOD
 
 shift @rslt;
 $model_def{model} = \@rslt;
+
+sidereal_period( \%model_def );
 {
     local $Data::Dumper::Trailingcomma = 1;
     local $Data::Dumper::Sortkeys = 1;
@@ -281,10 +284,70 @@ $model_def{model} = \@rslt;
 	    $cc->{$key}{name} ||= $key;
 	}
 	return (
+	    name		=> $theory[$iv],
 	    default_cutoff	=> $cc,
 	);
     }
 
+}
+
+# Given the model definition, update it with the tropical and sidereal
+# period
+BEGIN {
+    my %adjust = (
+	VSOP87B	=> -1,
+	VSOP87D	=> 1,
+    );
+    sub sidereal_period {
+	my ( $model_def ) = @_;
+
+	my $adj = $adjust{$model_def->{name}}
+	    or return;
+
+	my $model = $model_def{model};
+
+	# Defensive programming. The series are built this way, so we should
+	# always pass.
+	'L1' eq $model->[0][1]{series}
+	    or die sprintf '%s - %s is not the L1 series',
+		'Programming error',
+		'$model->[0][1]',
+		;
+	( $model->[0][1]{terms}[0][1] || $model->[0][1]{terms}[0][2] )
+	    and die '%s - %s is not the constant term of the L1 series',
+		'Programming error',
+		'$model->[0][1]{terms}[0]',
+		;
+	# IAU 2003 rate of precession in radians per second. The IAU gives
+	# it in radians per Julian century
+	use constant RATE_OF_PRECESSION_IAU_2003 => 0.024381750 / ( 36525 *
+	    SECSPERDAY );
+
+	my $ov =		# Orbital velocity, radians per second
+	    $model->[0][1]{terms}[0][0] /	# radians per Julian millennium
+	    ( 365250 *	# days per julian millennium
+	      SECSPERDAY );	# seconds per day
+
+	my $my = TWOPI / $ov;	# Model year. This is sidereal for
+				# VSOP87B, tropical for VSOP87D
+						# or tropical
+	my $oy = $my;		# Other year, tropical or sidereal
+
+	for ( 0 .. 9 ) {	# Iterate a few times;
+
+	    # Radians of precession
+	    my $delta = $oy * RATE_OF_PRECESSION_IAU_2003;
+
+	    $oy = $my + $adj * $delta / $ov;
+	}
+
+	$model_def->{tropical_period} = 0 +
+	    sprintf '%.3f', $adj > 0 ? $my : $oy;
+	$model_def->{sidereal_period} = 0 +
+	    sprintf '%.3f', $adj > 0 ? $oy : $my;
+
+	return;
+    }
 }
 
 __END__
