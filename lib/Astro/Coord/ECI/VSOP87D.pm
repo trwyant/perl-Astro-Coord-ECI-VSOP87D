@@ -623,7 +623,7 @@ EOD
 	    $exponent++;
 	    $T *= $jm;
 	}
-	$vel /= DAYS_PER_JULIAN_MILENNIUM;	# units/milennium -> units/day
+	$vel /= DAYS_PER_JULIAN_MILENNIUM;	# units/millennium -> units/day
 	push @p_vec, $pos;
 	push @v_vec, $vel;
     }
@@ -13002,7 +13002,7 @@ coordinate and power of T; each term is a reference to an array
 containing quantities A, B, and C to be plugged into the equation
 C<A * cos( B + C * T) * T ** n>.
 
-C<T> is dynamical time in Julian milennia since J2000.0.
+C<T> is dynamical time in Julian millennia since J2000.0.
 
 This method is B<not> exportable. It is expected that each derived class
 will implement its own version of this method.
