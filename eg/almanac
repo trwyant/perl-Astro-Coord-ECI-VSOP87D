@@ -3,7 +3,7 @@
 # Display Sun and Moon rise and set for a pre-programmed position. The
 # -help option gets you help.
 
-use 5.006002;
+use 5.008;
 
 use strict;
 use warnings;
