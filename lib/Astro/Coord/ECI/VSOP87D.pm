@@ -116,7 +116,6 @@ z = %.6f
 𝚫 = %.6f
 𝛕 = %.7f day
 EOD
-	    my $coord = sprintf '%.6f %.6f %.6f', $x, $y, $z;
 	    if ( ( my $check = sprintf '%.1f', $tau ) ne $last_tau ) {
 		$last_tau = $check;
 
@@ -599,7 +598,6 @@ EOD
     ;
 
     my $jm = jcent2000( $time ) / 10;	# Meeus 32.1
-    my $cutoff = $arg{cutoff} || 'full';
     my @p_vec;
     my @v_vec;
     foreach my $coord ( @{ $self->__model_definition( 'model' ) } ) {
