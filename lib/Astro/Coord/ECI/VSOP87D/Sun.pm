@@ -9,9 +9,7 @@ use base qw{ Astro::Coord::ECI::Sun };
 
 use Astro::Coord::ECI::Mixin qw{ next_quarter };
 
-use Astro::Coord::ECI::VSOP87D qw{
-    cutoff cutoff_definition __get_attr time_set
-};
+use Astro::Coord::ECI::VSOP87D qw{ :sun };
 
 use Carp;
 

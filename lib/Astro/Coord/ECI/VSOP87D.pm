@@ -7,7 +7,7 @@ use warnings;
 
 use Astro::Coord::ECI::Utils qw{
     AU PI SECSPERDAY TWOPI
-    asin deg2rad jcent2000 julianday mod2pi
+    asin deg2rad jcent2000 julianday load_module mod2pi
     rad2deg rad2dms rad2hms tan
 };
 use Exporter qw{ import };
@@ -33,15 +33,13 @@ our @EXPORT_OK = qw{
 };
 our %EXPORT_TAGS = (
     mixin	=> \@EXPORT_OK,
+    sun		=> [ grep { ! { __model => 1 }->{$_} } @EXPORT_OK ],
 );
 
 # We want to ensure SUN_CLASS is loaded because it is our default Sun
 # implementation, but we do it at run time to avoid a circular
 # dependency.
-{
-    ( my $fn = SUN_CLASS . '.pm' ) =~ s< :: ></>smxg;
-    require $fn;
-}
+load_module( SUN_CLASS );
 
 sub time_set {
     my ( $self ) = @_;
@@ -12950,7 +12948,8 @@ are:
 
 The default is C<'Meeus'>.
 
-This method is exportable, either by name or via the C<:mixin> tag.
+This method is exportable, either by name or via the C<:mixin> or
+C<:sun> tags.
 
 =head2 cutoff_definition
 
@@ -12971,7 +12970,8 @@ C<'R5'>), and the value of each key is the number of terms of that
 series to use. If one of the keys is omitted or has a false value, that
 series is not used.
 
-This method is exportable, either by name or via the C<:mixin> tag.
+This method is exportable, either by name or via the C<:mixin> or
+C<:sun> tags.
 
 =head2 nutation_iau1980
 
@@ -12993,6 +12993,8 @@ with the minimum modifications necessary to make the C code into Perl
 code. This file is contained in
 L<http://www.iausofa.org/2018_0130_C/sofa_c-20180130.tar.gz>.
 
+This subroutine is not exportable.
+
 =head2 period
 
  $self->period()
@@ -13004,6 +13006,9 @@ The algorithm is the author's, and is a first approximation. That is. it
 is just the tropical period plus however long it takes the object to
 cover the amount of precession during the tropical year.
 
+This method is exportable, either by name or via the C<:mixin> or
+C<:sun> tags.
+
 =head2 time_set
 
  $self->time_set()
@@ -13014,12 +13019,30 @@ time has been set.
 
 It returns the invocant.
 
+This method is exportable, either by name or via the C<:mixin> or
+C<:sun> tags.
+
 =head2 year
 
  $self->year()
 
 This method returns the tropical year of the object, calculated from
 the coefficient of its first C<L1> term.
+
+This method is exportable, either by name or via the C<:mixin> or
+C<:sun> tags.
+
+=head2 __get_attr
+
+This static method is B<private> to this package, and may be changed or
+revoked without notice at any time. Documentation is for the benefit of
+the author.
+
+This method returns the hash containing VSOP87D-specific attributes,
+creating it if necessary.
+
+This method is exportable, either by name or via the C<:mixin> or
+C<:sun> tags.
 
 =head2 __model
 
@@ -13051,7 +13074,8 @@ useful at the moment is written to standard error.
 
 =back
 
-This method is exportable, either by name or via the C<:mixin> tag.
+This method is exportable, either by name or via the C<:mixin> tag. It
+is not exported by the C<:sun> tag.
 
 =head2 __model_definition
 
