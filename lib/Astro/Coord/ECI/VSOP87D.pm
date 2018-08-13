@@ -7,7 +7,8 @@ use warnings;
 
 use Astro::Coord::ECI::Utils qw{
     AU PI SECSPERDAY TWOPI
-    asin deg2rad jcent2000 julianday load_module mod2pi
+    asin deg2rad jcent2000 julianday
+    load_module looks_like_number mod2pi
     rad2deg rad2dms rad2hms tan
 };
 use Exporter qw{ import };
@@ -16,6 +17,7 @@ use POSIX qw{ floor };
 use Storable qw{ dclone };
 
 use constant DAYS_PER_JULIAN_MILENNIUM	=> 365250;
+use constant CODE_REF	=> ref sub {};
 use constant HASH_REF	=> ref {};
 use constant SUN_CLASS	=> __PACKAGE__ . '::Sun';
 
@@ -64,10 +66,6 @@ EOD
 
     my ( $Le, $Be, $Re );
 
-#    if ( my $code = $sun->can( 'cutoff_definition' ) ) {
-#	( $Le, $Be, $Re ) = __PACKAGE__->__model( $time,
-#	    cutoff_definition	=> $code->( $sun, $cutoff ),
-#	);
     if ( $sun->isa( SUN_CLASS ) ) {
 	# We call __model as a subroutine because the Earth's model
 	# parameters are hung on the Sun, but if we call it as a method
@@ -535,10 +533,6 @@ sub __get_attr {
     my ( $self ) = @_;
     ref $self
 	or confess 'Can not call as static method';
-    use YAML;
-    my $debug = $self->__model_definition( 'default_cutoff' );
-    HASH_REF eq ref $debug
-	or confess 'Invalid default_cutoff ', Dump( $debug ), " for $self";
     return $self->{ __PACKAGE__() } ||= {
 	cutoff	=> 'Meeus',
 	cutoff_definition	=> dclone( $self->__model_definition(
@@ -589,10 +583,47 @@ sub cutoff_definition {
 	or $name = $self->cutoff();
     my $attr = $self->__get_attr();
     if ( @arg ) {
-	if ( defined $arg[0] ) {
-	    HASH_REF eq ref $arg[0]
+	if ( defined( my $val = $arg[0] ) ) {
+	    unless ( ref $val ) {
+		looks_like_number( $val )
+		    and $val !~ m/ \A Inf (?: inity )? | NaN \z /smx
+		    or croak 'Scalar cutoff definition must be a number';
+		my $num = $val;
+		$val = sub {
+		    my ( @model ) = @_;
+		    my %cutoff;
+		    foreach my $series ( @model ) {
+			my $count = 0;
+			foreach my $term ( @{ $series->{terms} } ) {
+			    last if $term->[0] < $num;
+			    $count++;
+			}
+			$count
+			    and $cutoff{$series->{series}} = $count;
+		    }
+		    return \%cutoff;
+		};
+	    }
+	    if ( CODE_REF eq ref $val ) {
+		$val = $val->(
+		    map { @{ $_ } } @{
+			$self->__model_definition( 'model' ) }
+		);
+		$val->{name} = $name;
+	    }
+	    HASH_REF eq ref $val
 		or croak 'The cutoff definition value must be a hash ref';
-	    $attr->{cutoff_definition} = $arg[0];
+	    my $terms = $self->__model_definition(
+		'default_cutoff')->{none};
+	    foreach my $name ( keys %{ $val } ) {
+		'name' eq $name
+		    and next;
+		exists $terms->{$name}
+		    or croak "Series '$name' not in this model";
+		$val->{$name} > $terms->{$name}
+		    and croak "Series '$name' has only $terms->{$name} terms";
+	    }
+	    $attr->{cutoff_definition}{$name} = $val;
 	} else {
 	    $self->__model_definition( 'default_cutoff' )->{$name}
 		and croak "You may not delete cutoff definition '$name'";
@@ -767,6 +798,29 @@ redefines a cutoff. The keys to the hash are the names of VSOP87D series
 C<'R5'>), and the value of each key is the number of terms of that
 series to use. If one of the keys is omitted or has a false value, that
 series is not used.
+
+If the second argument is a scalar, it is expected to be a number, and a
+cutoff is generated consisting of all terms whose coefficient (C<'A'> in
+Meeus' terminology) is equal to or greater than the number.
+
+If the second argument is a code reference, this code is expected to
+return a reference to a valid cutoff hash as described two paragraphs
+previously. Its arguments are the individual series hashes, extracted
+from the model. Each hash will have the following keys:
+
+=over
+
+=item series
+
+The name of the series (e.g. 'L0').
+
+=item terms
+
+An array reference containing the terms of the series.
+Each term is a reference to an array containing in order, in Meeus'
+terms, values C<'A'>, C<'B'>, and C<'C'>.
+
+=back
 
 This method is exportable, either by name or via the C<:mixin> or
 C<:sun> tags.
