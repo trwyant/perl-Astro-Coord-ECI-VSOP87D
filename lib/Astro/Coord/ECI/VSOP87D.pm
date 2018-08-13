@@ -535,7 +535,7 @@ sub __get_attr {
     HASH_REF eq ref $debug
 	or confess 'Invalid default_cutoff ', Dump( $debug ), " for $self";
     return $self->{ __PACKAGE__() } ||= {
-	cutoff	=> 'none',
+	cutoff	=> 'Meeus',
 	cutoff_definition	=> dclone( $self->__model_definition(
 		'default_cutoff' ) ),
     };
@@ -12948,7 +12948,7 @@ are:
 
 =back
 
-The default is C<'none'>, which uses the full theory.
+The default is C<'Meeus'>.
 
 This method is exportable, either by name or via the C<:mixin> tag.
 

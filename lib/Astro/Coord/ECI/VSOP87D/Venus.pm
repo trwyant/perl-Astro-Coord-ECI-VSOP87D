@@ -8661,7 +8661,7 @@ are:
 
 =back
 
-The default is C<'none'>, which uses the full theory.
+The default is C<'Meeus'>.
 
 =head2 cutoff_definition
 
