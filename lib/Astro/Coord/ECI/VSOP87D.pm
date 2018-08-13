@@ -535,7 +535,7 @@ sub __get_attr {
     HASH_REF eq ref $debug
 	or confess 'Invalid default_cutoff ', Dump( $debug ), " for $self";
     return $self->{ __PACKAGE__() } ||= {
-	cutoff	=> 'full',
+	cutoff	=> 'none',
 	cutoff_definition	=> dclone( $self->__model_definition(
 		'default_cutoff' ) ),
     };
@@ -12942,15 +12942,13 @@ are:
 
 =over
 
-=item C<'full'> specifies the full series;
+=item C<'none'> specifies no cutoff (i.e. the full series);
 
 =item C<'Meeus'> specifies the Meeus Appendix III series.
 
 =back
 
-The default is C<'full'>.
-
-The default is C<0>, which uses the full theory.
+The default is C<'none'>, which uses the full theory.
 
 This method is exportable, either by name or via the C<:mixin> tag.
 
@@ -12964,7 +12962,7 @@ This return is a deep clone of the actual definition.
 
 If the second argument is C<undef>, the named cutoff is deleted. If the
 cutoff does not exist, the call does nothing. It is an error to try to
-delete built-in cutoffs C<'full'> and C<'Meeus'>.
+delete built-in cutoffs C<'none'> and C<'Meeus'>.
 
 If the second argument is a reference to a hash, this defines or
 redefines a cutoff. The keys to the hash are the names of VSOP87D series
@@ -12972,6 +12970,8 @@ redefines a cutoff. The keys to the hash are the names of VSOP87D series
 C<'R5'>), and the value of each key is the number of terms of that
 series to use. If one of the keys is omitted or has a false value, that
 series is not used.
+
+This method is exportable, either by name or via the C<:mixin> tag.
 
 =head2 nutation_iau1980
 

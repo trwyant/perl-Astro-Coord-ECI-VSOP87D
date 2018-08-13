@@ -257,12 +257,12 @@ sidereal_period( \%model_def );
     # $iv = The model version number (index into @theory)
     # $bo = The body name
     # $sn = The series name
-    # $in = The number of terms in the series, used for the 'full'
+    # $in = The number of terms in the series, used for the 'none'
     # cutoff.
     sub series_info {
 	my ( $model_def, $iv, $bo, $sn, $in ) = @_;
 
-	$model_def->{default_cutoff}{full}{$sn} = $in || 0;
+	$model_def->{default_cutoff}{none}{$sn} = $in || 0;
 
 	my $data = {
 	    series	=> $sn,
@@ -279,7 +279,7 @@ sidereal_period( \%model_def );
     sub cutoff_info {
 	my ( $iv, $bo ) = @_;
 	my $cc = dclone( $cutoff{$theory[$iv]}{$bo} || {} );
-	$cc->{full} ||= {};
+	$cc->{none} ||= {};
 	foreach my $key ( keys %{ $cc } ) {
 	    $cc->{$key}{name} ||= $key;
 	}

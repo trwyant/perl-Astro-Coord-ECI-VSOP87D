@@ -62,7 +62,7 @@ sub __model_definition {
                                              'R4' => 1,
                                              'name' => 'Meeus',
                                            },
-                                'full' => {
+                                'none' => {
                                             'B0' => '210',
                                             'B1' => '133',
                                             'B2' => '59',
@@ -81,7 +81,7 @@ sub __model_definition {
                                             'R3' => '7',
                                             'R4' => '3',
                                             'R5' => '2',
-                                            'name' => 'full',
+                                            'name' => 'none',
                                           },
                               },
           'model' => [
@@ -8644,19 +8644,43 @@ its superclass:
 =head2 cutoff
 
  say $self->cutoff()
- $self->cutoff( 25e-8 );
+ $self->cutoff( 'Meeus' );
 
 When called with an argument, this method is a mutator, changing the
 cutoff value. When called without an argument, this method is an
 accessor, returning the current cutoff value.
 
-The cutoff value cuts off the calculation when the amplitude of the
-terms becomes less than the given number, as suggested by Bretagnon and
-Francou.  Meeus' abbreviated version of VSOP87D is roughly equivalent to
-a cutoff of C<25e-8>, though he actually uses this cutoff only for the
-L0 term.
+The cutoff value specifies how to truncate the calculation. Valid values
+are:
 
-The default is C<0>, which uses the full theory.
+=over
+
+=item C<'none'> specifies no cutoff (i.e. the full series);
+
+=item C<'Meeus'> specifies the Meeus Appendix III series.
+
+=back
+
+The default is C<'none'>, which uses the full theory.
+
+=head2 cutoff_definition
+
+This method reports, creates, and deletes cutoff definitions.
+
+The first argument is the name of the cutoff. If this is the only
+argument, a reference to a hash defining the named cutoff is returned.
+This return is a deep clone of the actual definition.
+
+If the second argument is C<undef>, the named cutoff is deleted. If the
+cutoff does not exist, the call does nothing. It is an error to try to
+delete built-in cutoffs C<'none'> and C<'Meeus'>.
+
+If the second argument is a reference to a hash, this defines or
+redefines a cutoff. The keys to the hash are the names of VSOP87D series
+(C<'L0'> through C<'L5'>, C<'B0'> through C<'B5'>, and C<'R0'> through
+C<'R5'>), and the value of each key is the number of terms of that
+series to use. If one of the keys is omitted or has a false value, that
+series is not used.
 
 =head1 SEE ALSO
 
