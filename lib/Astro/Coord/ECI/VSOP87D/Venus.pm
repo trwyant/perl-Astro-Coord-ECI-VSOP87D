@@ -42,6 +42,7 @@ sub __almanac_event_type_iterator {
 sub __model_definition {
     my ( undef, $key ) = @_;
     return {
+	  'body' => 'Venus',
           'default_cutoff' => {
                                 'Meeus' => {
                                              'B0' => 9,

@@ -34,6 +34,7 @@ while ( <> ) {
     my ( $iv, $bo, $ic, $vn, $it, $in ) = unpack 'x17A1x4A7x12A1A17a1a7';
     keys %model_def
 	or %model_def = cutoff_info( $iv, $bo );
+    $model_def{body} ||= ucfirst lc $bo;
     $vn =~ s/ [^(]* . //smx; $vn =~ s/ [)] .* //smx;
     $in =~ s/ \A \s+ //smx;
     my $sn = sprintf '%s%d', substr( $vn, $ic - 1, 1 ), $it;

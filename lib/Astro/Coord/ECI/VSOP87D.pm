@@ -29,7 +29,7 @@ our $VERSION = '0.000_01';
 our @EXPORT_OK = qw{
     SUN_CLASS
     cutoff cutoff_definition period time_set year
-    __get_attr __model
+    __access_cutoff __get_attr __init __model __mutate_cutoff
 };
 our %EXPORT_TAGS = (
     mixin	=> \@EXPORT_OK,
@@ -544,6 +544,28 @@ sub __get_attr {
 	cutoff_definition	=> dclone( $self->__model_definition(
 		'default_cutoff' ) ),
     };
+}
+
+sub __init {
+    my ( $self ) = @_;
+    my $name = $self->__model_definition( 'body' );
+    $self->set(
+	name	=> $name,
+	id	=> $name,
+    );
+    return;
+}
+
+# To hook into the Astro::Coord::ECI get()/set() machinery
+sub __access_cutoff {
+    my ( $self ) = @_;
+    return $self->cutoff();
+}
+
+sub __mutate_cutoff {
+    my ( $self, undef, $val ) = @_;
+    $self->cutoff( $val );
+    return $self;
 }
 
 sub cutoff {

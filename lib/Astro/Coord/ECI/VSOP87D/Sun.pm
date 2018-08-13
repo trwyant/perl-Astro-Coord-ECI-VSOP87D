@@ -24,6 +24,7 @@ sub __model {
 sub __model_definition {
     my ( undef, $key ) = @_;
     return {
+	  'body' => 'Sun',
           'default_cutoff' => {
                                 'Meeus' => {
                                              'B0' => 5,
