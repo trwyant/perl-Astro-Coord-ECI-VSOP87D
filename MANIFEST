@@ -13,7 +13,7 @@ Makefile.PL
 MANIFEST
 README
 t/basic.t
-t/data/vsop87d.ear
+t/data/vsop87d.sun
 t/data/vsop87d.venus
 t/meeus_25b.t
 t/meeus_33a.t
