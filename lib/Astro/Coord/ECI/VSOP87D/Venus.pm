@@ -8634,8 +8634,7 @@ Astro::Coord::ECI::VSOP87D::Venus - VSOP87D model of the position of Venus
 =head1 DESCRIPTION
 
 This Perl class computes the position of the Venus using the VSOP87D
-model. It is a subclass of
-L<Astro::Coord::ECI::Venus|Astro::Coord::ECI::Venus>.
+model. It is a subclass of L<Astro::Coord::ECI|Astro::Coord::ECI>.
 
 =head1 METHODS
 
