@@ -6,7 +6,6 @@ use strict;
 use warnings;
 
 use Astro::Coord::ECI::Utils qw{ SECSPERDAY TWOPI };
-use Data::Dumper;
 use Getopt::Long 2.33 qw{ :config auto_version };
 use Pod::Usage;
 use Storable qw{ dclone };
@@ -16,7 +15,7 @@ our $VERSION = '0.000_01';
 my %opt;
 
 GetOptions( \%opt,
-    qw{ verbose! },
+    qw{ dumper! template=s verbose! },
     help => sub { pod2usage( { -verbose => 2 } ) },
 ) or pod2usage( { -verbose => 0 } );
 
@@ -34,7 +33,8 @@ while ( <> ) {
     my ( $iv, $bo, $ic, $vn, $it, $in ) = unpack 'x17A1x4A7x12A1A17a1a7';
     keys %model_def
 	or %model_def = cutoff_info( $iv, $bo );
-    $model_def{body} ||= ucfirst lc $bo;
+    $bo = ucfirst lc $bo;
+    $model_def{body} ||= { Earth => 'Sun' }->{$bo} || $bo;
     $vn =~ s/ [^(]* . //smx; $vn =~ s/ [)] .* //smx;
     $in =~ s/ \A \s+ //smx;
     my $sn = sprintf '%s%d', substr( $vn, $ic - 1, 1 ), $it;
@@ -76,12 +76,51 @@ shift @rslt;
 $model_def{model} = \@rslt;
 
 sidereal_period( \%model_def );
-{
+
+my $model;
+
+if ( $opt{dumper} ) {
+    no warnings qw{ once };
+    require Data::Dumper;
     local $Data::Dumper::Indent = 1;
+    local $Data::Dumper::Pad = '    ';
     local $Data::Dumper::Quotekeys = 0;
     local $Data::Dumper::Sortkeys = 1;
     local $Data::Dumper::Trailingcomma = 1;
-    print Dumper( \%model_def );
+    $model = Dumper( \%model_def );
+    $model =~ s/ [^=]* = \s* //smx;
+    $model =~ s/ ; \s* \z /\n/smx
+} else {
+    require Data::Dump;
+    $model = Data::Dump::dump( \%model_def );
+    $model =~ s/ ^ /    /smxg;
+}
+
+if ( defined $opt{template} ) {
+    $model =~ s/ \A \s+ //smx;
+    $model =~ s/ \s+ \z //smx;
+    my %subst = (
+	body	=> $model_def{body},
+	model	=> $model,
+	year	=> ( localtime )[5] + 1900,
+    );
+
+    open my $fh, '<:encoding(utf-8)', $opt{template}
+	or die "Unable to open $opt{template}: $!\n";
+    while ( <$fh> ) {
+	s/ [[] % \s* ( \S+ ) \s* % []] / replace( \%subst, $1 ) /smxge;
+	print;
+    }
+    close $fh;
+} else {
+    print $model;
+}
+
+sub replace {
+    my ( $subst, $name ) = @_;
+    defined $subst->{$name}
+	or die "Substitution $name not defined in $opt{template} line $.\n";
+    return $subst->{$name};
 }
 
 {
@@ -265,7 +304,7 @@ sidereal_period( \%model_def );
     sub series_info {
 	my ( $model_def, $iv, $bo, $sn, $in ) = @_;
 
-	$model_def->{default_cutoff}{none}{$sn} = $in || 0;
+	$model_def->{default_cutoff}{none}{$sn} = ( $in || 0 ) + 0;
 
 	my $data = {
 	    series	=> $sn,
@@ -405,10 +444,41 @@ decode - Decode a VSOP87 file.
 
 =head1 OPTIONS
 
+=head2 -dumper
+
+If this Boolean option is asserted, output is generated with
+L<Data::Dumper|Data::Dumper>.
+
+The default is C<-nodumper>, which uses L<Data::Dump|Data::Dump>.
+
 =head2 -help
 
 This option displays the documentation for this script. The script then
 exits.
+
+=head2 -template
+
+ -template tools/template.txt
+
+This option attempts to turn the output into a complete Perl module
+using the given file as a template.
+
+The templating system is a home-grown one using Template-Toolkit-style
+substitutions; that is, C<[% foo %]> gets replaced by whatever is in
+C<foo>. The following (and B<only> the following) may be substituted:
+
+=over
+
+=item body - the name of the body
+
+=item model - the model parameters
+
+=item year - the current year
+
+=back
+
+Enclosing anything else (including C<'foo'>) in substitution delimiters
+willl result in an exception and program termination.
 
 =head2 -verbose
 

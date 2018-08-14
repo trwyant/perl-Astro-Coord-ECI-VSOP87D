@@ -22,6 +22,7 @@ t/model.t
 tools/decode
 tools/README
 tools/reference
+tools/template.txt
 xt/author/changes.t
 xt/author/critic.t
 xt/author/executable.t
