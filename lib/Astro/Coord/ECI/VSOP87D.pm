@@ -141,7 +141,7 @@ EOD
 	    }
 	}
 
-	# Meeus corrects for abberation here for a planet, before
+	# Meeus corrects for aberration here for a planet, before
 	# conversion to FK5. It makes no real difference to the answer,
 	# since everything done to the latitude and longitude before
 	# conversion to equatorial is just addition and subtraction, and
@@ -149,8 +149,8 @@ EOD
 	# who is trying to verify code versus the worked examples,
 	# because it changes the intermediate results. Sigh.
 
-	# Abberation per Meeus 23.2
-	use constant CONSTANT_OF_ABBERATION	=> deg2rad(
+	# Aberration per Meeus 23.2
+	use constant CONSTANT_OF_ABERRATION	=> deg2rad(
 	    20.49552 / 3600 );
 	# Longitude of the Sun
 	my $Ls = mod2pi( $Le + PI );
@@ -161,16 +161,16 @@ EOD
 	my $pi = deg2rad( ( 0.000_46 * $T + 1.71946 ) * $T + 102.93735 );
 
 	my $delta_lambda = ( ( $e * cos( $pi - $lambda ) - cos( $Ls -
-		    $lambda ) ) / cos $beta ) * CONSTANT_OF_ABBERATION;
+		    $lambda ) ) / cos $beta ) * CONSTANT_OF_ABERRATION;
 	my $delta_beta = - sin( $beta ) * ( sin( $Ls - $lambda ) - $e *
-	    sin( $pi - $lambda ) ) * CONSTANT_OF_ABBERATION;
+	    sin( $pi - $lambda ) ) * CONSTANT_OF_ABERRATION;
 	$lambda += $delta_lambda;
 	$beta += $delta_beta;
 
 	DEBUG
 	    and printf <<'EOD',
 
-Abberation:
+Planetary aberration:
 𝚫𝛌 = %s
 𝛌 = %.5f
   = %s
@@ -272,32 +272,35 @@ Obliquity:
 EOD
 	rad2deg( $epsilon_0 ), rad2deg( $epsilon ), rad2dms( $epsilon );
 
-    # TODO this works for the Sun, but for a planet I need to use 23.2,
-    # which uses the position of the Sun as well as the body.
-    # TODO For the Sun, Meeus corrects for abberation AFTER converting
-    # to FK5, but for a planet he corrects BEFORE converting to FK5.
-    # Grumble. Guess what I will do is implement that way and then
-    # (maybe) see how much difference it makes. The alternative is to
-    # have a completely distinct implementation for the Sun, which I
-    # detest.
-
     # Meeus 25.10
 
     unless ( $Rb ) {	# The Sun.
-	use constant SOLAR_ABBERATION_FACTOR => - deg2rad( 20.4898 / 3600 );
-	my $delta_lambda = SOLAR_ABBERATION_FACTOR / $Delta;
+	use constant SOLAR_ABERRATION_FACTOR => - deg2rad( 20.4898 / 3600 );
+	my $delta_lambda = SOLAR_ABERRATION_FACTOR / $Delta;
 	$lambda += $delta_lambda;
 
 	DEBUG
 	    and printf <<'EOD',
 
-Abberation:
+Solar aberration:
 𝚫𝛌 = %s
 𝛌 = %.5f
   = %s
 EOD
 	rad2dms( $delta_lambda), rad2deg( $lambda ), rad2dms( $lambda );
     }
+
+    DEBUG
+	and printf <<'EOD', $long_sym,
+
+Final ecliptic coordinates:
+%s = %.5f
+  = %s
+𝛃 = %.5f
+  = %s
+EOD
+	rad2deg( $lambda ), rad2dms( $lambda ),
+	rad2deg( $beta ), rad2dms( $beta );
 
     my $sin_eps = sin $epsilon;
     my $cos_eps = cos $epsilon;
@@ -313,6 +316,7 @@ EOD
     DEBUG
 	and printf <<'EOD',
 
+Equatorial coordinates:
 𝛂 = %.6f
   = %s
 𝛅 = %.6f
@@ -323,6 +327,20 @@ EOD
 
     $self->equatorial( $alpha, $delta, $Delta * AU );
     $self->equinox_dynamical( $time );
+
+    if ( DEBUG ) {
+	my ( $lat, $lon ) = $self->ecliptic();
+	printf <<'EOD', $long_sym,
+
+Check -- recovered ecliptic coordinates:
+%s = %.5f
+  = %s
+𝛃 = %.5f
+  = %s
+EOD
+	    rad2deg( $lon ), rad2dms( $lon ),
+	    rad2deg( $lat ), rad2dms( $lat );
+    }
 
     return $self;
 }
