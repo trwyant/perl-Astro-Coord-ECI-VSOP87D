@@ -3,13 +3,7 @@ package main;
 use strict;
 use warnings;
 
-# We have to load Astro::Coord::ECI::Sun explicitly so we can turn off
-# Singleton.
-use Astro::Coord::ECI::Sun;
 use Test::More 0.88;
-
-# TODO remove this once we have the updated singleton logic.
-local $Astro::Coord::ECI::Sun::Singleton = 0;
 
 my $body;
 
