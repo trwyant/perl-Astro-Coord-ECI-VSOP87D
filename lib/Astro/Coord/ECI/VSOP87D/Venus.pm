@@ -1865,6 +1865,7 @@ sub __model_definition {
         ],
       ],
       name => "VSOP87D",
+      order => 2,
       sidereal_period => 19414148.998,
       tropical_period => 19413685.543,
     }->{$key};

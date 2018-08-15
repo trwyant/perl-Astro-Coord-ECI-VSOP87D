@@ -30,7 +30,7 @@ our $VERSION = '0.000_01';
 
 our @EXPORT_OK = qw{
     SUN_CLASS
-    cutoff cutoff_definition period time_set year
+    cutoff cutoff_definition order period time_set year
     __access_cutoff __get_attr __init __model __mutate_cutoff
 };
 our %EXPORT_TAGS = (
@@ -707,6 +707,11 @@ EOD
     return ( @p_vec, @v_vec );
 }
 
+sub order {
+    my ( $self ) = @_;
+    return $self->__model_definition( 'order' );
+}
+
 # Calculate the period of the orbit. The orbital velocity in radians per
 # Julian centutu is just the inverse of the coefficient of the constant
 # L1 term -- that is, the A value of the one with B and C both zero,
@@ -864,6 +869,17 @@ code. This file is contained in
 L<http://www.iausofa.org/2018_0130_C/sofa_c-20180130.tar.gz>.
 
 This subroutine is not exportable.
+
+=head2 order
+
+ say 'Order from Sun: ', $self->order();
+
+This method returns the order of the body from the Sun, with the Sun
+itself being C<0>. The number C<3> is skipped, since that would
+represent the Earth.
+
+This method is exportable, either by name or via the C<:mixin> or
+C<:sun> tags.
 
 =head2 period
 
