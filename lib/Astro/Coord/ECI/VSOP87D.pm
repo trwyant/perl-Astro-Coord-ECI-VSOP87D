@@ -28,14 +28,22 @@ BEGIN {
 
 our $VERSION = '0.000_01';
 
-our @EXPORT_OK = qw{
+my @sun_tag = qw{
     SUN_CLASS
     cutoff cutoff_definition order period time_set year
-    __access_cutoff __get_attr __init __model __mutate_cutoff
+    __access_cutoff __get_attr __init __mutate_cutoff
 };
+my @mixin_tag = ( @sun_tag, qw{ __model } );
+
+our @EXPORT_OK = (
+    @mixin_tag,
+    qw{
+	nutation_iau1980
+    },
+);
 our %EXPORT_TAGS = (
-    mixin	=> \@EXPORT_OK,
-    sun		=> [ grep { ! { __model => 1 }->{$_} } @EXPORT_OK ],
+    mixin	=> \@mixin_tag,
+    sun		=> \@sun_tag,
 );
 
 # We want to ensure SUN_CLASS is loaded because it is our default Sun
@@ -868,7 +876,7 @@ with the minimum modifications necessary to make the C code into Perl
 code. This file is contained in
 L<http://www.iausofa.org/2018_0130_C/sofa_c-20180130.tar.gz>.
 
-This subroutine is not exportable.
+This method is exportable by name.
 
 =head2 order
 
