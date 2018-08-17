@@ -28,22 +28,23 @@ BEGIN {
 
 our $VERSION = '0.000_01';
 
-my @sun_tag = qw{
+my @basic_export = qw{
     SUN_CLASS
     cutoff cutoff_definition order period time_set year
     __access_cutoff __get_attr __init __mutate_cutoff
 };
-my @mixin_tag = ( @sun_tag, qw{ __model } );
 
 our @EXPORT_OK = (
-    @mixin_tag,
+    @basic_export,
     qw{
+	geometric_longitude
 	nutation_iau1980
+	__model
     },
 );
 our %EXPORT_TAGS = (
-    mixin	=> \@mixin_tag,
-    sun		=> \@sun_tag,
+    mixin	=> [ @basic_export, qw{ __model } ],
+    sun		=> [ @basic_export, qw{ geometric_longitude } ],
 );
 
 # We want to ensure SUN_CLASS is loaded because it is our default Sun
@@ -53,6 +54,7 @@ load_module( SUN_CLASS );
 
 sub time_set {
     my ( $self ) = @_;
+    my $attr = $self->__get_attr();
     my $time = $self->dynamical();
     my $cutoff = $self->cutoff();
     my $cutoff_def = $self->cutoff_definition();
@@ -92,6 +94,7 @@ Le = %.5f
 Be = %.5f
 Re = %.6f
 EOD
+
     my ( $lambda, $beta, $Delta, $long_sym );
     if ( $Rb ) {		# Not the Sun
 
@@ -248,6 +251,8 @@ EOD
 	    $long_sym, rad2deg( $lambda ), rad2dms( $lambda ),
 	    rad2deg( $beta ), rad2dms( $beta ),
 	    ;
+
+	$attr->{geometric_longitude} = $lambda;
     }
 
     # Nutation
@@ -283,6 +288,7 @@ EOD
     # Meeus 25.10
 
     unless ( $Rb ) {	# The Sun.
+	# Aberration
 	use constant SOLAR_ABERRATION_FACTOR => - deg2rad( 20.4898 / 3600 );
 	my $delta_lambda = SOLAR_ABERRATION_FACTOR / $Delta;
 	$lambda += $delta_lambda;
@@ -351,6 +357,14 @@ EOD
     }
 
     return $self;
+}
+
+sub geometric_longitude {
+    my ( $self ) = @_;
+    my $attr = $self->__get_attr();
+    defined $attr->{geometric_longitude}
+	and return $attr->{geometric_longitude};
+    croak 'Geometric longitude undefined -- time not set';
 }
 
 BEGIN {
@@ -557,9 +571,9 @@ BEGIN {
 
 sub __get_attr {
     my ( $self ) = @_;
-    ref $self
+    my $ref = ref $self
 	or confess 'Can not call as static method';
-    return $self->{ __PACKAGE__() } ||= {
+    return $self->{$ref} ||= {
 	cutoff	=> 'Meeus',
 	cutoff_definition	=> dclone( $self->__model_definition(
 		'default_cutoff' ) ),
@@ -855,6 +869,14 @@ terms, values C<'A'>, C<'B'>, and C<'C'>.
 
 This method is exportable, either by name or via the C<:mixin> or
 C<:sun> tags.
+
+=head2 geometric_longitude
+
+This method returns the geometric longitude of the body. This is after
+correction for aberration and light time (for bodies other than the Sun)
+and conversion to FK5.
+
+This method is exportable, either by name or via the C<:sun> tag.
 
 =head2 nutation_iau1980
 

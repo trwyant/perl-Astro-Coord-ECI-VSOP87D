@@ -2672,6 +2672,11 @@ C<'R5'>), and the value of each key is the number of terms of that
 series to use. If one of the keys is omitted or has a false value, that
 series is not used.
 
+=head2 geometric_longitude
+
+This method returns the geometric longitude of the body. This is after
+conversion to FK5.
+
 =head2 next_quarter
 
 This override of the superclass' method ignores the value of the

@@ -37,6 +37,11 @@ use Time::Local qw{ timegm };
 
     $sun->dynamical( $time );
 
+    my ( $geometric_long ) = $sun->geometric_longitude();
+    is_rad_deg $geometric_long, 199.907_347, 4,
+	'Ex 25b Sun geometric longitude';
+    note 'The result differs from Meeus by about .011 seconds of arc';
+
     my ( $ra, $dec, $rng ) = $sun->equatorial();
 
     is_rad_deg $ra,  198.378179, 5, 'Ex 25b Sun RA';
