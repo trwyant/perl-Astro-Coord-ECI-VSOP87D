@@ -2653,7 +2653,7 @@ are:
 
 The default is C<'Meeus'>.
 
-=head2 cutoff_definition
+=head2 model_cutoff_definition
 
 This method reports, creates, and deletes cutoff definitions.
 

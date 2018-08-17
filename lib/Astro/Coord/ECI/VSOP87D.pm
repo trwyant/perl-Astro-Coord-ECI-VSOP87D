@@ -30,7 +30,7 @@ our $VERSION = '0.000_01';
 
 my @basic_export = qw{
     SUN_CLASS
-    cutoff cutoff_definition
+    cutoff model_cutoff_definition
     nutation nutation_cutoff obliquity order period time_set year
     __access_cutoff __get_attr __init __mutate_cutoff
 };
@@ -57,7 +57,7 @@ sub time_set {
     my $attr = $self->__get_attr();
     my $time = $self->dynamical();
     my $cutoff = $self->cutoff();
-    my $cutoff_def = $self->cutoff_definition();
+    my $cutoff_def = $self->model_cutoff_definition();
     my $sun = $self->get( 'sun' );
 
     DEBUG
@@ -71,7 +71,7 @@ EOD
     my $T = jcent2000( $time );
 
     my ( $Lb, $Bb, $Rb ) = $self->__model( $time,
-	cutoff_definition	=> $cutoff_def,
+	model_cutoff_definition	=> $cutoff_def,
     );
 
     my ( $Le, $Be, $Re );
@@ -81,7 +81,7 @@ EOD
 	# parameters are hung on the Sun, but if we call it as a method
 	# we get the Sun's model, which always returns zeroes.
 	( $Le, $Be, $Re ) = __model( SUN_CLASS, $time,
-	    cutoff_definition	=> $sun->cutoff_definition( $cutoff ),
+	    model_cutoff_definition	=> $sun->model_cutoff_definition( $cutoff ),
 	);
     } else {
 	confess sprintf 'TODO Sun class %s not supported', ref $sun;
@@ -140,7 +140,7 @@ new JDE = %.5f
 EOD
 		( $Lb, $Bb, $Rb ) = $self->__model(
 		    $time - $tau,
-		    cutoff_definition	=> $cutoff_def,
+		    model_cutoff_definition	=> $cutoff_def,
 		);
 	    } else {
 
@@ -577,7 +577,7 @@ sub __get_attr {
 	or confess 'Can not call as static method';
     return $self->{$ref} ||= {
 	cutoff	=> 'Meeus',
-	cutoff_definition	=> dclone( $self->__model_definition(
+	model_cutoff_definition	=> dclone( $self->__model_definition(
 		'default_cutoff' ) ),
 	nutation_cutoff	=> 3,	# Meeus
     };
@@ -611,7 +611,7 @@ sub cutoff {
     if ( @arg ) {
 	defined $arg[0]
 	    or croak "cutoff must be defined";
-	$self->cutoff_definition( $arg[0] )
+	$self->model_cutoff_definition( $arg[0] )
 	    or croak "cutoff '$arg[0]' is unknown";
 	$attr->{cutoff} = $arg[0];
 	return $self;
@@ -620,7 +620,7 @@ sub cutoff {
     }
 }
 
-sub cutoff_definition {
+sub model_cutoff_definition {
     my ( $self, $name, @arg ) = @_;
     defined $name
 	or $name = $self->cutoff();
@@ -666,15 +666,15 @@ sub cutoff_definition {
 		$val->{$name} > $terms->{$name}
 		    and croak "Series '$name' has only $terms->{$name} terms";
 	    }
-	    $attr->{cutoff_definition}{$name} = $val;
+	    $attr->{model_cutoff_definition}{$name} = $val;
 	} else {
 	    $self->__model_definition( 'default_cutoff' )->{$name}
 		and croak "You may not delete cutoff definition '$name'";
-	    delete $attr->{cutoff_definition}{$name};
+	    delete $attr->{model_cutoff_definition}{$name};
 	}
 	return $self;
     } else {
-	return $attr->{cutoff_definition}{$name};
+	return $attr->{model_cutoff_definition}{$name};
     }
 }
 
@@ -693,8 +693,8 @@ __model:
     cutoff: %s
 EOD
     $self,
-    ( $arg{cutoff_definition} ?
-	( $arg{cutoff_definition}{name} || '<anonymous>' ) :
+    ( $arg{model_cutoff_definition} ?
+	( $arg{model_cutoff_definition}{name} || '<anonymous>' ) :
 	'<unspecified>' ),
     ;
 
@@ -706,8 +706,8 @@ EOD
 	my $T = 1;
 	my $pos = my $vel = 0;
 	foreach my $series ( @{ $coord } ) {
-	    my $limit = $arg{cutoff_definition} ?
-		( $arg{cutoff_definition}{$series->{series}} || 0 ) :
+	    my $limit = $arg{model_cutoff_definition} ?
+		( $arg{model_cutoff_definition}{$series->{series}} || 0 ) :
 		@{ $series->{terms} }
 		or next;
 	    --$limit;
@@ -886,7 +886,7 @@ C<:sun> tags.
 This value is also available via the
 L<Astro::Coord::ECI|Astro::Coord::ECI> C<get()> and C<set()> methods.
 
-=head2 cutoff_definition
+=head2 model_cutoff_definition
 
 This method reports, creates, and deletes cutoff definitions.
 
@@ -1112,7 +1112,7 @@ describes the information to return. The following are valid:
 
 =item default_cutoff
 
-This argument returns the default value of C<'cutoff_definition'> for a
+This argument returns the default value of C<'model_cutoff_definition'> for a
 new object.
 
 =item model

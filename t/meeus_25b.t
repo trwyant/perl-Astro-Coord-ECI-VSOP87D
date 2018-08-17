@@ -25,7 +25,7 @@ use Time::Local qw{ timegm };
     # Calling __model as a subroutine because the Sun carries the model
     # of the Earth, but its __model() is overridden to return zeroes.
     my ( $L, $B, $R ) = __model( SUN_CLASS, $time,
-	cutoff_definition	=> $sun->cutoff_definition(),
+	model_cutoff_definition	=> $sun->model_cutoff_definition(),
     );
 
     is_rad_deg $L, 19.907_372, 5, 'Ex 25b Earth L';

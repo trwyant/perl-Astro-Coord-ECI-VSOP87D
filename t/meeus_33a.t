@@ -20,11 +20,11 @@ use Time::Local qw{ timegm };
     my $time = timegm( 0, 0, 0, 20, 11, 1992 );
     my $venus = Astro::Coord::ECI::VSOP87D::Venus->new();
     $venus->cutoff( CUTOFF );
-    my $cutoff_def = $venus->cutoff_definition();
+    my $cutoff_def = $venus->model_cutoff_definition();
 
     my ( $L, $B, $R ) = $venus->__model(
 	$time,
-	cutoff_definition	=> $cutoff_def,
+	model_cutoff_definition	=> $cutoff_def,
     );
     is_rad_deg $L, 26.114_28,  5, 'Ex 33a Venus L';
     note 'The result differs from Meeus by 0.014 arc seconds';
