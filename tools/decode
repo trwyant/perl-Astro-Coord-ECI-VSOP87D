@@ -312,11 +312,11 @@ sub replace {
     # $bo = The body name
     # $sn = The series name
     # $in = The number of terms in the series, used for the 'none'
-    # cutoff.
+    # model cutoff.
     sub series_info {
 	my ( $model_def, $iv, $bo, $sn, $in ) = @_;
 
-	$model_def->{default_cutoff}{none}{$sn} = ( $in || 0 ) + 0;
+	$model_def->{default_model_cutoff}{none}{$sn} = ( $in || 0 ) + 0;
 
 	my $data = {
 	    series	=> $sn,
@@ -326,7 +326,7 @@ sub replace {
 	return $data;
     }
 
-    # Return cutoff info as name/value pairs. Designed to be called in
+    # Return model cutoff info as name/value pairs. Designed to be called in
     # list context.  The arguments are:
     # $iv = The model version number (index into @theory)
     # $bo = The body name
@@ -339,7 +339,7 @@ sub replace {
 	}
 	return (
 	    name		=> $theory[$iv],
-	    default_cutoff	=> $cc,
+	    default_model_cutoff	=> $cc,
 	);
     }
 

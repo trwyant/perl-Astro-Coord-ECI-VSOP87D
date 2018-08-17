@@ -22,7 +22,8 @@ foreach my $name ( qw{ Sun Venus } ) {
 
     is $body->get( 'name' ), $name, qq<Body name is '$name'>;
 
-    is $body->get( 'cutoff' ), 'Meeus', qq<Default $name cutoff is 'Meeus'>;
+    is $body->get( 'model_cutoff' ), 'Meeus',
+	qq<Default $name model cutoff is 'Meeus'>;
 
 }
 

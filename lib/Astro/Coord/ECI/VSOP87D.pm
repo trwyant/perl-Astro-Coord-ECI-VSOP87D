@@ -30,9 +30,11 @@ our $VERSION = '0.000_01';
 
 my @basic_export = qw{
     SUN_CLASS
-    cutoff model_cutoff_definition
+    model_cutoff model_cutoff_definition
     nutation nutation_cutoff obliquity order period time_set year
-    __access_cutoff __get_attr __init __mutate_cutoff
+    __access_model_cutoff __access_nutation_cutoff
+    __get_attr __init
+    __mutate_model_cutoff __mutate_nutation_cutoff
 };
 
 our @EXPORT_OK = (
@@ -56,7 +58,7 @@ sub time_set {
     my ( $self ) = @_;
     my $attr = $self->__get_attr();
     my $time = $self->dynamical();
-    my $cutoff = $self->cutoff();
+    my $cutoff = $self->model_cutoff();
     my $cutoff_def = $self->model_cutoff_definition();
     my $sun = $self->get( 'sun' );
 
@@ -211,7 +213,7 @@ EOD
 
 
     # Convert to FK5. Meeus says (ch. 25 pg 166) this is necessary for
-    # high accuracy (though not if using his cutoff VSOP87D), though
+    # high accuracy (though not if using his truncated VSOP87D), though
     # Bretagnon & Francou seem to say it is needed only for VSOP87 and
     # VSOP87E.
 
@@ -576,9 +578,9 @@ sub __get_attr {
     my $ref = ref $self
 	or confess 'Can not call as static method';
     return $self->{$ref} ||= {
-	cutoff	=> 'Meeus',
+	model_cutoff	=> 'Meeus',
 	model_cutoff_definition	=> dclone( $self->__model_definition(
-		'default_cutoff' ) ),
+		'default_model_cutoff' ) ),
 	nutation_cutoff	=> 3,	# Meeus
     };
 }
@@ -594,43 +596,43 @@ sub __init {
 }
 
 # To hook into the Astro::Coord::ECI get()/set() machinery
-sub __access_cutoff {
+sub __access_model_cutoff {
     my ( $self ) = @_;
-    return $self->cutoff();
+    return $self->model_cutoff();
 }
 
-sub __mutate_cutoff {
+sub __mutate_model_cutoff {
     my ( $self, undef, $val ) = @_;
-    $self->cutoff( $val );
+    $self->model_cutoff( $val );
     return $self;
 }
 
-sub cutoff {
+sub model_cutoff {
     my ( $self, @arg ) = @_;
     my $attr = $self->__get_attr();
     if ( @arg ) {
 	defined $arg[0]
-	    or croak "cutoff must be defined";
+	    or croak "model cutoff must be defined";
 	$self->model_cutoff_definition( $arg[0] )
-	    or croak "cutoff '$arg[0]' is unknown";
-	$attr->{cutoff} = $arg[0];
+	    or croak "model cutoff '$arg[0]' is unknown";
+	$attr->{model_cutoff} = $arg[0];
 	return $self;
     } else {
-	return $attr->{cutoff};
+	return $attr->{model_cutoff};
     }
 }
 
 sub model_cutoff_definition {
     my ( $self, $name, @arg ) = @_;
     defined $name
-	or $name = $self->cutoff();
+	or $name = $self->model_cutoff();
     my $attr = $self->__get_attr();
     if ( @arg ) {
 	if ( defined( my $val = $arg[0] ) ) {
 	    unless ( ref $val ) {
 		looks_like_number( $val )
 		    and $val !~ m/ \A Inf (?: inity )? | NaN \z /smx
-		    or croak 'Scalar cutoff definition must be a number';
+		    or croak 'Scalar model cutoff definition must be a number';
 		my $num = $val;
 		$val = sub {
 		    my ( @model ) = @_;
@@ -655,9 +657,9 @@ sub model_cutoff_definition {
 		$val->{name} = $name;
 	    }
 	    HASH_REF eq ref $val
-		or croak 'The cutoff definition value must be a hash ref';
+		or croak 'The model cutoff definition value must be a hash ref';
 	    my $terms = $self->__model_definition(
-		'default_cutoff')->{none};
+		'default_model_cutoff')->{none};
 	    foreach my $name ( keys %{ $val } ) {
 		'name' eq $name
 		    and next;
@@ -668,8 +670,8 @@ sub model_cutoff_definition {
 	    }
 	    $attr->{model_cutoff_definition}{$name} = $val;
 	} else {
-	    $self->__model_definition( 'default_cutoff' )->{$name}
-		and croak "You may not delete cutoff definition '$name'";
+	    $self->__model_definition( 'default_model_cutoff' )->{$name}
+		and croak "You may not delete model cutoff definition '$name'";
 	    delete $attr->{model_cutoff_definition}{$name};
 	}
 	return $self;
@@ -690,7 +692,7 @@ sub __model {
 
 __model:
     invocant: %s
-    cutoff: %s
+    model_cutoff: %s
 EOD
     $self,
     ( $arg{model_cutoff_definition} ?
@@ -858,21 +860,21 @@ This module does not implement a class, and is better regarded as a
 mixin.  It supports the following methods, which are public and
 exportable unless documented otherwise.
 
-=head2 cutoff
+=head2 model_cutoff
 
- say $self->cutoff()
- $self->cutoff( 'Meeus' );
+ say $self->model_cutoff()
+ $self->model_cutoff( 'Meeus' );
 
 When called with an argument, this method is a mutator, changing the
-cutoff value. When called without an argument, this method is an
-accessor, returning the current cutoff value.
+model cutoff value. When called without an argument, this method is an
+accessor, returning the current model cutoff value.
 
-The cutoff value specifies how to truncate the calculation. Valid values
+The model cutoff value specifies how to truncate the calculation. Valid values
 are:
 
 =over
 
-=item C<'none'> specifies no cutoff (i.e. the full series);
+=item C<'none'> specifies no model cutoff (i.e. the full series);
 
 =item C<'Meeus'> specifies the Meeus Appendix III series.
 
@@ -888,31 +890,31 @@ L<Astro::Coord::ECI|Astro::Coord::ECI> C<get()> and C<set()> methods.
 
 =head2 model_cutoff_definition
 
-This method reports, creates, and deletes cutoff definitions.
+This method reports, creates, and deletes model cutoff definitions.
 
-The first argument is the name of the cutoff. If this is the only
-argument, a reference to a hash defining the named cutoff is returned.
-This return is a deep clone of the actual definition.
+The first argument is the name of the model cutoff. If this is the only
+argument, a reference to a hash defining the named model cutoff is
+returned.  This return is a deep clone of the actual definition.
 
-If the second argument is C<undef>, the named cutoff is deleted. If the
-cutoff does not exist, the call does nothing. It is an error to try to
-delete built-in cutoffs C<'none'> and C<'Meeus'>.
+If the second argument is C<undef>, the named model cutoff is deleted.
+If the model cutoff does not exist, the call does nothing. It is an
+error to try to delete built-in cutoffs C<'none'> and C<'Meeus'>.
 
 If the second argument is a reference to a hash, this defines or
-redefines a cutoff. The keys to the hash are the names of VSOP87D series
-(C<'L0'> through C<'L5'>, C<'B0'> through C<'B5'>, and C<'R0'> through
-C<'R5'>), and the value of each key is the number of terms of that
-series to use. If one of the keys is omitted or has a false value, that
-series is not used.
+redefines a model cutoff. The keys to the hash are the names of VSOP87D
+series (C<'L0'> through C<'L5'>, C<'B0'> through C<'B5'>, and C<'R0'>
+through C<'R5'>), and the value of each key is the number of terms of
+that series to use. If one of the keys is omitted or has a false value,
+that series is not used.
 
 If the second argument is a scalar, it is expected to be a number, and a
-cutoff is generated consisting of all terms whose coefficient (C<'A'> in
-Meeus' terminology) is equal to or greater than the number.
+model cutoff is generated consisting of all terms whose coefficient
+(C<'A'> in Meeus' terminology) is equal to or greater than the number.
 
 If the second argument is a code reference, this code is expected to
-return a reference to a valid cutoff hash as described two paragraphs
-previously. Its arguments are the individual series hashes, extracted
-from the model. Each hash will have the following keys:
+return a reference to a valid model cutoff hash as described two
+paragraphs previously. Its arguments are the individual series hashes,
+extracted from the model. Each hash will have the following keys:
 
 =over
 
@@ -952,11 +954,11 @@ the IAU 1980 model.
 The C<$time> argument is optional, and defaults to the object's current
 dynamical time.
 
-The C<$cutoff> argument is optional; if specified as
-a number larger than C<0>, terms whose amplitudes are smaller than the
-cutoff (in milli arc seconds) are ignored. The Meeus version of the
-algorithm is specified by a value of C<3>. The default is specified by
-the L<nutation_cutoff()|/nutation_cutoff> value.
+The C<$cutoff> argument is optional; if specified as a number larger
+than C<0>, terms whose amplitudes are smaller than the nutation cutoff
+(in milli arc seconds) are ignored. The Meeus version of the algorithm
+is specified by a value of C<3>. The default is specified by the
+L<nutation_cutoff()|/nutation_cutoff> value.
 
 The model itself comes from Meeus chapter 22. The model parameters were
 not transcribed from that source, however, but were taken from the
@@ -1082,9 +1084,9 @@ following are defined:
 
 =over
 
-=item cutoff
+=item model_cutoff
 
-This is the cutoff value. Terms whose amplitudes are less than this
+This is the model cutoff value. Terms whose amplitudes are less than this
 value are not used. The default is C<0>.
 
 =item debug
@@ -1110,7 +1112,7 @@ describes the information to return. The following are valid:
 
 =over
 
-=item default_cutoff
+=item default_model_cutoff
 
 This argument returns the default value of C<'model_cutoff_definition'> for a
 new object.

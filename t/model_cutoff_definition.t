@@ -62,7 +62,7 @@ my %cutoff_def = (
 
 my $sun = Astro::Coord::ECI::VSOP87D::Sun->new();
 
-is $sun->cutoff(), 'Meeus', q<Default cutoff is 'Meeus'>;
+is $sun->model_cutoff(), 'Meeus', q<Default model cutoff is 'Meeus'>;
 
 is_deeply $sun->model_cutoff_definition(), $cutoff_def{Meeus},
     q<model_cutoff_definition() returns 'Meeus' definition>;
@@ -70,7 +70,7 @@ is_deeply $sun->model_cutoff_definition(), $cutoff_def{Meeus},
 is_deeply $sun->model_cutoff_definition( 'Meeus' ), $cutoff_def{Meeus},
     q<model_cutoff_definition( 'Meeus' ) returns 'Meeus' definition>;
 
-$sun->cutoff( 'none' );
+$sun->model_cutoff( 'none' );
 note q<cutoff changed to 'none'>;
 
 is_deeply $sun->model_cutoff_definition(), $cutoff_def{none},
@@ -80,18 +80,18 @@ $sun->model_cutoff_definition( twenty_five => $cutoff_def{twenty_five} );
 
 is_deeply $sun->model_cutoff_definition( 'twenty_five' ),
     $cutoff_def{twenty_five},
-    q<Able to define cutoff 'twenty_five'>;
+    q<Able to define model cutoff 'twenty_five'>;
 
 $sun->model_cutoff_definition( twenty_five => undef );
 
 is_deeply $sun->model_cutoff_definition( 'twenty_five' ), undef,
-    q<Able to undefine cutoff 'twenty_five'>;
+    q<Able to undefine model cutoff 'twenty_five'>;
 
 $sun->model_cutoff_definition( twenty_five => \&code_twenty_five );
 
 is_deeply $sun->model_cutoff_definition( 'twenty_five' ),
     $cutoff_def{twenty_five},
-    q<Able to define cutoff 'twenty_five' procedurally>;
+    q<Able to define model cutoff 'twenty_five' procedurally>;
 
 $sun->model_cutoff_definition( twenty_five => undef );
 
@@ -102,7 +102,7 @@ $sun->model_cutoff_definition( twenty_five => 25e-8 );
 
 is_deeply $sun->model_cutoff_definition( 'twenty_five' ),
     $cutoff_def{twenty_five},
-    q<Able to define cutoff 'twenty_five' by minimum coefficient value>;
+    q<Able to define model cutoff 'twenty_five' by minimum coefficient value>;
 
 $sun->model_cutoff_definition( twenty_five => 25e-8 );
 

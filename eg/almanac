@@ -93,7 +93,7 @@ if ( $opt{classic} ) {
 	require $fn;
 	push @almanac, $class->new(
 	    station	=> $loc,
-	)->cutoff( 'Meeus' )->almanac( $start, $end );
+	)->model_cutoff( 'Meeus' )->almanac( $start, $end );
     }
 }
 
