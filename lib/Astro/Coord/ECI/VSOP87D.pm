@@ -30,7 +30,8 @@ our $VERSION = '0.000_01';
 
 my @basic_export = qw{
     SUN_CLASS
-    cutoff cutoff_definition order period time_set year
+    cutoff cutoff_definition
+    nutation nutation_cutoff obliquity order period time_set year
     __access_cutoff __get_attr __init __mutate_cutoff
 };
 
@@ -38,7 +39,6 @@ our @EXPORT_OK = (
     @basic_export,
     qw{
 	geometric_longitude
-	nutation_iau1980
 	__model
     },
 );
@@ -256,7 +256,7 @@ EOD
     }
 
     # Nutation
-    my ( $delta_psi, $delta_eps ) = nutation_iau1980( $time, 3 );
+    my ( $delta_psi, $delta_eps ) = $self->nutation( $time );
     $lambda += $delta_psi;
 
     DEBUG
@@ -268,22 +268,7 @@ Nutation:
 EOD
 
     # Obliquity per Meeus 22.3
-    my $U = $T / 100;
-    my $epsilon_0 = 0;
-    $epsilon_0 = $epsilon_0 * $U + $_ for qw{ 2.45 5.79 27.87 7.12
-    -39.05 -249.67 -51.38 1999.25 -1.55 -4680.93 84381.448 };
-    $epsilon_0 = deg2rad( $epsilon_0 / 3600 );
-    my $epsilon = $epsilon_0 + $delta_eps;
-
-    DEBUG
-	and printf <<"EOD",
-
-Obliquity:
-𝛆₀ = %.7f
-𝛆 = %.7f
-  = %s
-EOD
-	rad2deg( $epsilon_0 ), rad2deg( $epsilon ), rad2dms( $epsilon );
+    my $epsilon = $self->obliquity( $time );
 
     # Meeus 25.10
 
@@ -516,9 +501,26 @@ BEGIN {
 	return @model;
     }
 
-    sub nutation_iau1980 {
-	my ( $time, $cutoff ) = @_;
+    # This may be a premature optimization, BUT the nutation in
+    # longitude and obliquity are used different places, so I anticipate
+    # this getting called twice by time_set(), with the same time. So:
+    my $memoize_args = '';
+    my @memoize_result;
+
+    sub nutation {
+	my ( $self, $time, $cutoff ) = @_;
+
+	defined $time
+	    or $time = $self->dynamical();
+
 	$cutoff ||= 0;	# milli arc seconds. Meeus is 3
+
+	{
+	    ( my $memo = "$time $cutoff" ) eq $memoize_args
+		and return @memoize_result;
+	    $memoize_args = $memo;
+	}
+
 	my $T = jcent2000( $time );	# Meeus 22.1
 
 	# All this from Meeus Ch 22 pp 143ff, expressed in degrees
@@ -563,8 +565,8 @@ BEGIN {
 
 	# The model computes nutations in milli arc seconds, but we
 	# return them in radians
-	return ( map { deg2rad( $_ / 3600_0000 ) } $delta_psi,
-	    $delta_eps );
+	return ( @memoize_result =
+	    map { deg2rad( $_ / 3600_0000 ) } $delta_psi, $delta_eps );
     }
 
 }
@@ -577,6 +579,7 @@ sub __get_attr {
 	cutoff	=> 'Meeus',
 	cutoff_definition	=> dclone( $self->__model_definition(
 		'default_cutoff' ) ),
+	nutation_cutoff	=> 3,	# Meeus
     };
 }
 
@@ -729,6 +732,61 @@ EOD
     return ( @p_vec, @v_vec );
 }
 
+# To hook into the Astro::Coord::ECI get()/set() machinery
+sub __access_nutation_cutoff {
+    my ( $self ) = @_;
+    return $self->nutation_cutoff();
+}
+
+sub __mutate_nutation_cutoff {
+    my ( $self, undef, $val ) = @_;
+    $self->nutation_cutoff( $val );
+    return $self;
+}
+
+sub nutation_cutoff {
+    my ( $self, @arg ) = @_;
+    my $attr = $self->__get_attr();
+    if ( @arg ) {
+	defined $arg[0]
+	    or croak 'Nutation cutoff must be defined';
+	looks_like_number( $arg[0] )
+	    and $arg[0] >= 0
+	    or croak 'Nutation cutoff must be a non-negative number';
+	$attr->{nutation_cutoff} = $arg[0];
+	return $self;
+    } else {
+	return $attr->{nutation_cutoff};
+    }
+}
+
+sub obliquity {
+    my ( $self, $time ) = @_;
+
+    defined $time
+	or $time = $self->dynamical();
+    # Obliquity per Meeus 22.3
+    my $U = jcent2000( $time ) / 100;
+    my $epsilon_0 = 0;
+    $epsilon_0 = $epsilon_0 * $U + $_ for qw{ 2.45 5.79 27.87 7.12
+	-39.05 -249.67 -51.38 1999.25 -1.55 -4680.93 84381.448 };
+    $epsilon_0 = deg2rad( $epsilon_0 / 3600 );
+    my ( undef, $delta_eps ) = $self->nutation( $time );
+    my $epsilon = $epsilon_0 + $delta_eps;
+
+    DEBUG
+	and printf <<"EOD",
+
+Obliquity:
+𝛆₀ = %.7f
+𝛆 = %.7f
+  = %s
+EOD
+	rad2deg( $epsilon_0 ), rad2deg( $epsilon ), rad2dms( $epsilon );
+
+    return $epsilon;
+}
+
 sub order {
     my ( $self ) = @_;
     return $self->__model_definition( 'order' );
@@ -825,6 +883,9 @@ The default is C<'Meeus'>.
 This method is exportable, either by name or via the C<:mixin> or
 C<:sun> tags.
 
+This value is also available via the
+L<Astro::Coord::ECI|Astro::Coord::ECI> C<get()> and C<set()> methods.
+
 =head2 cutoff_definition
 
 This method reports, creates, and deletes cutoff definitions.
@@ -878,18 +939,24 @@ and conversion to FK5.
 
 This method is exportable, either by name or via the C<:sun> tag.
 
-=head2 nutation_iau1980
+=head2 nutation
 
  my ( $delta_psi, $delta_epsilon ) =
-     nutation_iau1980( $dynamical_time, $cutoff );
+     $self->nutation( $dynamical_time, $cutoff );
 
 This subroutine (B<not> method) calculates the nutation in ecliptic
 longitude (C<$delta_psi>) and latitude (C<$delta_epsilon>) at the given
 dynamical time in seconds since the epoch (i.e. Perl time), according to
-the IAU 1980 model. The C<$cutoff> argument is optional; if specified as
+the IAU 1980 model.
+
+The C<$time> argument is optional, and defaults to the object's current
+dynamical time.
+
+The C<$cutoff> argument is optional; if specified as
 a number larger than C<0>, terms whose amplitudes are smaller than the
 cutoff (in milli arc seconds) are ignored. The Meeus version of the
-algorithm is specified by a value of C<3>. The default is C<0>.
+algorithm is specified by a value of C<3>. The default is specified by
+the L<nutation_cutoff()|/nutation_cutoff> value.
 
 The model itself comes from Meeus chapter 22. The model parameters were
 not transcribed from that source, however, but were taken from the
@@ -898,7 +965,44 @@ with the minimum modifications necessary to make the C code into Perl
 code. This file is contained in
 L<http://www.iausofa.org/2018_0130_C/sofa_c-20180130.tar.gz>.
 
-This method is exportable by name.
+This method is exportable, either by name or via the C<:mixin> or
+C<:sun> tags.
+
+=head2 nutation_cutoff
+
+ say $self->nutation_cutoff()
+ $self->nutation_cutoff( 3 );
+
+When called with an argument, this method is a mutator, changing the
+nutation_cutoff value. When called without an argument, this method is
+an accessor, returning the current nutation_cutoff value.
+
+The nutation_cutoff value specifies how to truncate the nutation
+calculation. All terms whose magnitudes are less than the nutation
+cutoff are ignored. The value is in terms of 0.0001 seconds of arc, and
+must be a non-negative number.
+
+The default is C<3>, which is the value Meeus uses.
+
+This method is exportable, either by name or via the C<:mixin> or
+C<:sun> tags.
+
+This value is also available via the
+L<Astro::Coord::ECI|Astro::Coord::ECI> C<get()> and C<set()> methods.
+
+=head2 obliquity
+
+ $epsilon = $self->obliquity( $time );
+
+This method calculates the obliquity of the ecliptic in radians at
+the given B<dynamical> time. If the time is omitted or specified as
+C<undef>, the current dynamical time of the object is used.
+
+The algorithm is equation 22.3 from Jean Meeus' "Astronomical
+Algorithms", 2nd Edition, Chapter 22, pages 143ff.
+
+This method is exportable, either by name or via the C<:mixin> or
+C<:sun> tags.
 
 =head2 order
 
@@ -942,8 +1046,8 @@ C<:sun> tags.
 
  $self->year()
 
-This method returns the tropical year of the object, calculated from
-the coefficient of its first C<L1> term.
+This method returns the length of the tropical year of the object,
+calculated from the coefficient of its first C<L1> term.
 
 This method is exportable, either by name or via the C<:mixin> or
 C<:sun> tags.

@@ -2683,6 +2683,68 @@ This override of the superclass' method ignores the value of the
 C<'iterate_for_quarters'> attribute, and always iterates. The superclass
 uses an algorithm from Meeus if this attribute is false.
 
+=head2 nutation
+
+ my ( $delta_psi, $delta_epsilon ) =
+     $self->nutation( $dynamical_time, $cutoff );
+
+This subroutine (B<not> method) calculates the nutation in ecliptic
+longitude (C<$delta_psi>) and latitude (C<$delta_epsilon>) at the given
+dynamical time in seconds since the epoch (i.e. Perl time), according to
+the IAU 1980 model.
+
+The C<$time> argument is optional, and defaults to the object's current
+dynamical time.
+
+The C<$cutoff> argument is optional; if specified as
+a number larger than C<0>, terms whose amplitudes are smaller than the
+cutoff (in milli arc seconds) are ignored. The Meeus version of the
+algorithm is specified by a value of C<3>. The default is specified by
+the L<nutation_cutoff()|/nutation_cutoff> value.
+
+The model itself comes from Meeus chapter 22. The model parameters were
+not transcribed from that source, however, but were taken from the
+source IAU C reference implementation of the algorithm, F<src/nut80.c>,
+with the minimum modifications necessary to make the C code into Perl
+code. This file is contained in
+L<http://www.iausofa.org/2018_0130_C/sofa_c-20180130.tar.gz>.
+
+This method is exportable, either by name or via the C<:mixin> or
+C<:sun> tags.
+
+=head2 nutation_cutoff
+
+ say $self->nutation_cutoff()
+ $self->nutation_cutoff( 3 );
+
+When called with an argument, this method is a mutator, changing the
+nutation_cutoff value. When called without an argument, this method is
+an accessor, returning the current nutation_cutoff value.
+
+The nutation_cutoff value specifies how to truncate the nutation
+calculation. All terms whose magnitudes are less than the nutation
+cutoff are ignored. The value is in terms of 0.0001 seconds of arc, and
+must be a non-negative number.
+
+The default is C<3>, which is the value Meeus uses.
+
+This method is exportable, either by name or via the C<:mixin> or
+C<:sun> tags.
+
+This value is also available via the
+L<Astro::Coord::ECI|Astro::Coord::ECI> C<get()> and C<set()> methods.
+
+=head2 obliquity
+
+ $epsilon = $self->obliquity( $time );
+
+This method calculates the obliquity of the ecliptic in radians at
+the given B<dynamical> time. If the time is omitted or specified as
+C<undef>, the current dynamical time of the object is used.
+
+The algorithm is equation 22.3 from Jean Meeus' "Astronomical
+Algorithms", 2nd Edition, Chapter 22, pages 143ff.
+
 =head1 SEE ALSO
 
 L<Astro::Coord::ECI::Sun|Astro::Coord::ECI::Sun>
@@ -2709,6 +2771,10 @@ of the licenses in the directory LICENSES.
 This program is distributed in the hope that it will be useful, but
 without any warranty; without even the implied warranty of
 merchantability or fitness for a particular purpose.
+
+Software Routines from the IAU SOFA Collection were used. Copyright (C)
+International Astronomical Union Standards of Fundamental Astronomy
+(L<http://www.iausofa.org>)
 
 =cut
 

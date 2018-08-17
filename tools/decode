@@ -87,7 +87,7 @@ $model_def{order} = {
     Saturn	=> 6,
     Uranus	=> 7,
     Neptune	=> 8,
-}->{$model_def{body}}
+}->{$model_def{body}};
 
 my $model;
 
