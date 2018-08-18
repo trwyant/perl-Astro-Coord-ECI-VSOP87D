@@ -8,7 +8,7 @@ use warnings;
 use base qw{ Astro::Coord::ECI };
 
 use Astro::Coord::ECI::Mixin qw{
-    almanac almanac_hash next_quarter next_quarter_hash
+    almanac almanac_hash
 };
 use Astro::Coord::ECI::VSOP87D qw{ :mixin };
 
