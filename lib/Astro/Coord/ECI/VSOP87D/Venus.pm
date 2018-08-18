@@ -84,6 +84,7 @@ sub __model_definition {
                    R5   => 2,
                  },
       },
+      diameter => 12104,
       model => [
         [
           {

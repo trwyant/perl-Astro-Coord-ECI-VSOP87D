@@ -588,9 +588,11 @@ sub __get_attr {
 sub __init {
     my ( $self ) = @_;
     my $name = $self->__model_definition( 'body' );
+    my $diam = $self->__model_definition( 'diameter' );
     $self->set(
-	name	=> $name,
-	id	=> $name,
+	diameter	=> $diam,
+	name		=> $name,
+	id		=> $name,
     );
     return;
 }

@@ -137,6 +137,7 @@ sub replace {
 
 {
     my %cutoff;
+    my %radius;
     my @theory;
 
     BEGIN {
@@ -302,6 +303,17 @@ sub replace {
 		},
 	    },
 	);
+	
+	# from https://solarsystem.nasa.gov/planets/overview/ 18-Aug-2018
+	%radius = (
+	    MERCURY	=> 2_439.7,
+	    VENUS	=> 6_052,
+	    MARS	=> 3_390,
+	    JUPITER	=> 69_911,
+	    SATURN	=> 58_232,
+	    URANUS	=> 25_362,
+	    NEPTUNE	=> 24_622,
+	);
 
 	# Theory index to name
 	@theory = map { "VSOP87$_" } '', qw{ A B C D E };
@@ -338,6 +350,7 @@ sub replace {
 	    $cc->{$key}{name} ||= $key;
 	}
 	return (
+	    diameter		=> $radius{$bo} * 2,
 	    name		=> $theory[$iv],
 	    default_model_cutoff	=> $cc,
 	);
