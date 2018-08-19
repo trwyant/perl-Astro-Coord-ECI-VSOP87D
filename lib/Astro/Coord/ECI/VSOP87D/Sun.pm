@@ -63,6 +63,7 @@ sub __model_definition {
                    R5   => 3,
                  },
       },
+      diameter => 1_391_016,	# https://solarsystem.nasa.gov/solar-system/sun/in-depth/
       model => [
         [
           {

@@ -308,6 +308,7 @@ sub replace {
 	%radius = (
 	    MERCURY	=> 2_439.7,
 	    VENUS	=> 6_052,
+	    EARTH	=> 1_391_016,	# Sun, but we use Earth file.
 	    MARS	=> 3_390,
 	    JUPITER	=> 69_911,
 	    SATURN	=> 58_232,
