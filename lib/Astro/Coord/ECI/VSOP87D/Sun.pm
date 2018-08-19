@@ -39,7 +39,7 @@ sub __model_definition {
                    R0   => 40,
                    R1   => 10,
                    R2   => 6,
-                   R3   => 3,
+                   R3   => 2,
                    R4   => 1,
                  },
         none  => {

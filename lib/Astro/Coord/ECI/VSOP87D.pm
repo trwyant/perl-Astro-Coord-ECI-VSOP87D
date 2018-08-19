@@ -92,9 +92,10 @@ EOD
     DEBUG
 	and printf <<'EOD', rad2deg( $Le ), rad2deg( $Be ), $Re;
 
-Le = %.5f
-Be = %.5f
-Re = %.6f
+Heliocentric position of the Earth:
+L0 = %.5f
+B0 = %.5f
+R0 = %.6f
 EOD
 
     my ( $lambda, $beta, $Delta, $long_sym );
@@ -104,12 +105,14 @@ EOD
 
 	while ( 1 ) {
 	    DEBUG
-		and printf <<'EOD', rad2deg( $Lb ), rad2deg( $Bb ), $Rb;
+		and printf <<'EOD', $self->get( 'name' ),
 
-Lb = %.5f
-Bb = %.5f
-Rb = %.6f
+Heliocentric position of %s:
+L = %.5f
+B = %.5f
+R = %.6f
 EOD
+			rad2deg( $Lb ), rad2deg( $Bb ), $Rb;
 
 	    # Meeus 33.1
 	    my $cosBb = cos( $Bb );
@@ -126,9 +129,9 @@ EOD
 	    DEBUG
 		and printf <<'EOD', $x, $y, $z, $Delta, $tau / SECSPERDAY;
 
-x = %.6f
-y = %.6f
-z = %.6f
+x = %+.6f
+y = %+.6f
+z = %+.6f
 𝚫 = %.6f
 𝛕 = %.7f day
 EOD
@@ -153,6 +156,18 @@ EOD
 		last;
 	    }
 	}
+
+	DEBUG
+	    and printf <<'EOD',
+
+Geocentric ecliptic position:
+𝛌 = %.5f
+  = %s
+𝛃 = %.5f
+  = %s
+EOD
+		rad2deg( $lambda ), rad2dms( $lambda ),
+		rad2deg( $beta ), rad2dms( $beta );
 
 	# Meeus corrects for aberration here for a planet, before
 	# conversion to FK5. It makes no real difference to the answer,
@@ -197,6 +212,18 @@ EOD
 
     } else {			# The Sun
 	( $lambda, $beta, $Delta ) = ( mod2pi( $Le + PI ), - $Be, $Re );
+
+	DEBUG
+	    and printf <<'EOD',
+
+Geocentric ecliptic position:
+☉ = %.5f
+  = %s
+𝛃 = %.5f
+  = %s
+EOD
+		rad2deg( $lambda ), rad2dms( $lambda ),
+		rad2deg( $beta ), rad2dms( $beta );
 	$long_sym = '☉';
     }
 
@@ -262,12 +289,16 @@ EOD
     $lambda += $delta_psi;
 
     DEBUG
-	and printf <<"EOD", rad2dms( $delta_psi ), rad2dms( $delta_eps );
+	and printf <<"EOD",
 
 Nutation:
 𝚫𝛙 = %s
 𝚫𝛆 = %s
+𝛌 = %.5f
+  = %s
 EOD
+	    rad2dms( $delta_psi ), rad2dms( $delta_eps ),
+	    rad2deg( $lambda ), rad2dms( $lambda );
 
     # Obliquity per Meeus 22.3
     my $epsilon = $self->obliquity( $time );
