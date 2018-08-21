@@ -150,7 +150,9 @@ EOD
 	    } else {
 
 		# Meeus 33.2
-		$lambda = mod2pi( atan2( $y, $x ) );
+		$lambda = atan2( $y, $x );
+		$lambda < 0
+		    and $lambda += TWOPI;
 		$beta = atan2( $z, sqrt( $x * $x + $y * $y ) );
 		$long_sym = '𝛌';
 		last;
@@ -158,10 +160,10 @@ EOD
 	}
 
 	DEBUG
-	    and printf <<'EOD',
+	    and printf <<'EOD', $long_sym,
 
 Geocentric ecliptic position:
-𝛌 = %.5f
+%s = %.5f
   = %s
 𝛃 = %.5f
   = %s
@@ -212,19 +214,19 @@ EOD
 
     } else {			# The Sun
 	( $lambda, $beta, $Delta ) = ( mod2pi( $Le + PI ), - $Be, $Re );
+	$long_sym = '☉';
 
 	DEBUG
-	    and printf <<'EOD',
+	    and printf <<'EOD', $long_sym,
 
 Geocentric ecliptic position:
-☉ = %.5f
+%s = %.5f
   = %s
 𝛃 = %.5f
   = %s
 EOD
 		rad2deg( $lambda ), rad2dms( $lambda ),
 		rad2deg( $beta ), rad2dms( $beta );
-	$long_sym = '☉';
     }
 
     DEBUG
