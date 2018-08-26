@@ -5,38 +5,9 @@ use 5.008;
 use strict;
 use warnings;
 
-use base qw{ Astro::Coord::ECI };
-
-use Astro::Coord::ECI::Mixin qw{
-    almanac almanac_hash
-};
-use Astro::Coord::ECI::VSOP87D qw{ :mixin };
-
-use Carp;
+use base qw{ Astro::Coord::ECI::VSOP87D::_Inferior };
 
 our $VERSION = '0.000_01';
-
-sub __almanac_event_type_iterator {
-    my ( $self, $station ) = @_;
-
-    my $inx = 0;
-
-    my $horizon = $station->__get_almanac_horizon();
-
-    my @events = (
-	[ $station, next_elevation => [ $self, $horizon, 1 ], 'horizon',
-		[ 'Venus set', 'Venus rise' ] ],
-	[ $station, next_meridian => [ $self ], 'transit',
-		[ undef, 'Venus transits meridian' ] ],
-	# TODO elongation?
-    );
-
-    return sub {
-	$inx < @events
-	    and return @{ $events[$inx++] };
-	return;
-    };
-}
 
 sub __model_definition {
     my ( undef, $key ) = @_;
@@ -1906,8 +1877,9 @@ Astro::Coord::ECI::VSOP87D::Venus - VSOP87D model of the position of Venus
 
 =head1 DESCRIPTION
 
-This Perl class computes the position of the Venus using the VSOP87D
-model. It is a subclass of L<Astro::Coord::ECI|Astro::Coord::ECI>.
+This Perl class computes the position of Venus using the VSOP87D
+model. It is a subclass of
+L<Astro::Coord::ECI::VSOP87D::_Inferior|Astro::Coord::ECI::VSOP87D::_Inferior>.
 
 =head1 METHODS
 

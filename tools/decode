@@ -111,10 +111,17 @@ if ( $opt{dumper} ) {
 if ( defined $opt{template} ) {
     $model =~ s/ \A \s+ //smx;
     $model =~ s/ \s+ \z //smx;
+    my $superclass = $model_def{order} > 3 ?
+	'Astro::Coord::ECI::VSOP87D::_Superior' :
+	$model_def{order} ?
+	    'Astro::Coord::ECI::VSOP87D::_Inferior' :
+	    'Astro::Coord::ECI::Sun';
+
     my %subst = (
-	body	=> $model_def{body},
-	model	=> $model,
-	year	=> ( localtime )[5] + 1900,
+	body		=> $model_def{body},
+	model		=> $model,
+	superclass	=> $superclass,
+	year		=> ( localtime )[5] + 1900,
     );
 
     open my $fh, '<:encoding(utf-8)', $opt{template}

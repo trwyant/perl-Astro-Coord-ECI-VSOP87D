@@ -637,8 +637,12 @@ sub __access_model_cutoff {
 }
 
 sub __mutate_model_cutoff {
-    my ( $self, undef, $val ) = @_;
-    $self->model_cutoff( $val );
+    my ( $self, $name, $val ) = @_;
+    defined $val
+	or croak "model cutoff must be defined";
+    $self->model_cutoff_definition( $val )
+	or croak "model cutoff '$val' is unknown";
+    $self->__get_attr()->{$name} = $val;
     return $self;
 }
 

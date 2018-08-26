@@ -5,38 +5,9 @@ use 5.008;
 use strict;
 use warnings;
 
-use base qw{ Astro::Coord::ECI };
-
-use Astro::Coord::ECI::Mixin qw{
-    almanac almanac_hash
-};
-use Astro::Coord::ECI::VSOP87D qw{ :mixin };
-
-use Carp;
+use base qw{ [% superclass %] };
 
 our $VERSION = '0.000_01';
-
-sub __almanac_event_type_iterator {
-    my ( $self, $station ) = @_;
-
-    my $inx = 0;
-
-    my $horizon = $station->__get_almanac_horizon();
-
-    my @events = (
-	[ $station, next_elevation => [ $self, $horizon, 1 ], 'horizon',
-		[ '[% body %] set', '[% body %] rise' ] ],
-	[ $station, next_meridian => [ $self ], 'transit',
-		[ undef, '[% body %] transits meridian' ] ],
-	# TODO elongation?
-    );
-
-    return sub {
-	$inx < @events
-	    and return @{ $events[$inx++] };
-	return;
-    };
-}
 
 sub __model_definition {
     my ( undef, $key ) = @_;
@@ -77,8 +48,9 @@ Astro::Coord::ECI::VSOP87D::[% body %] - VSOP87D model of the position of [% bod
 
 =head1 DESCRIPTION
 
-This Perl class computes the position of the [% body %] using the VSOP87D
-model. It is a subclass of L<Astro::Coord::ECI|Astro::Coord::ECI>.
+This Perl class computes the position of [% body %] using the VSOP87D
+model. It is a subclass of
+L<[% superclass %]|[% superclass %]>.
 
 =head1 METHODS
 

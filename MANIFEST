@@ -5,6 +5,7 @@ inc/My/Module/Build.pm
 inc/My/Module/Meta.pm
 inc/My/Module/Test.pm
 lib/Astro/Coord/ECI/VSOP87D.pm
+lib/Astro/Coord/ECI/VSOP87D/_Inferior.pm
 lib/Astro/Coord/ECI/VSOP87D/Sun.pm
 lib/Astro/Coord/ECI/VSOP87D/Venus.pm
 LICENSES/Artistic
