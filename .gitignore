@@ -17,5 +17,6 @@
 /ref/
 *.swp
 /TODO
+/tools/ref-data
 /xt/author/optionals/
 /Astro-Coord-ECI-VSOP87A-*
