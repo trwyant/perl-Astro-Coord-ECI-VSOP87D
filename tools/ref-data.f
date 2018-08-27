@@ -73,7 +73,7 @@ C     Start date and time, ISO-8601 strict
 
 1200  continue
       read( *, 1210, end=9900 ) sdate, stime
-1210  format( i8, 1x, i6 )
+1210  format( i9, 1x, i6 )
       write( stderr, * ) 'Start date: ', sdate, '; start time: ', stime
       call datejd( sdate, stime, sjd )
       write( stderr, * ) 'Start JD: ', sjd
@@ -104,7 +104,7 @@ C     Interval, dddhhmmss
       call vsop87( curjd, 0, 0, 0.d0, inlun, r, ierr )
       if ( ierr .ne. 0 ) goto 9100
       print 5100, curdate, curtime, r
-5100  format( i8, 'T', i6, 10( f14.10 ) )
+5100  format( i9.8, 'T', i6.6, 10( f14.10 ) )
 
       curjd = curjd + interval
       if ( curjd .lt. ejd ) goto 5000
