@@ -10,7 +10,7 @@ my $body;
 require_ok 'Astro::Coord::ECI::VSOP87D'
     or BAIL_OUT $@;
 
-foreach my $name ( qw{ Sun Venus } ) {
+foreach my $name ( qw{ Sun Mercury Venus } ) {
     my $class = "Astro::Coord::ECI::VSOP87D::$name";
 
     require_ok $class

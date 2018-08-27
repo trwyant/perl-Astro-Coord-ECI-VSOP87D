@@ -47,7 +47,7 @@ foreach my $fn ( bsd_glob( 't/data/vsop87*.*' ) ) {
 	    cutoff	=> 'none',
 	);
 	foreach my $inx ( 0 .. $#got ) {
-	    cmp_ok abs( $got[$inx] - $want[$inx] ), '<', 2.1e-10,
+	    cmp_ok abs( $got[$inx] - $want[$inx] ), '<', 5e-10,
 	    "$body $dt [$inx] ($name[$inx])";
 	}
     }

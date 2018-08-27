@@ -6,6 +6,7 @@ inc/My/Module/Meta.pm
 inc/My/Module/Test.pm
 lib/Astro/Coord/ECI/VSOP87D.pm
 lib/Astro/Coord/ECI/VSOP87D/_Inferior.pm
+lib/Astro/Coord/ECI/VSOP87D/Mercury.pm
 lib/Astro/Coord/ECI/VSOP87D/Sun.pm
 lib/Astro/Coord/ECI/VSOP87D/Venus.pm
 LICENSES/Artistic
@@ -15,6 +16,7 @@ MANIFEST
 README
 t/basic.t
 t/model_cutoff_definition.t
+t/data/vsop87d.mercury
 t/data/vsop87d.sun
 t/data/vsop87d.venus
 t/meeus_25b.t
