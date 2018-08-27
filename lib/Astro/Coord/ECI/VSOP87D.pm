@@ -32,7 +32,8 @@ my @basic_export = qw{
     SUN_CLASS
     model_cutoff_definition
     nutation obliquity order period time_set year
-    __get_attr __init
+    __default
+    __get_attr
     __mutate_model_cutoff __mutate_nutation_cutoff
 };
 
@@ -610,22 +611,29 @@ sub __get_attr {
     my $ref = ref $self
 	or confess 'Can not call as static method';
     return $self->{$ref} ||= {
-	model_cutoff	=> 'Meeus',
 	model_cutoff_definition	=> dclone( $self->__model_definition(
 		'default_model_cutoff' ) ),
-	nutation_cutoff	=> 3,	# Meeus
     };
 }
 
-sub __init {
-    my ( $self ) = @_;
-    my $name = $self->__model_definition( 'body' );
-    my $diam = $self->__model_definition( 'diameter' );
-    $self->set(
-	diameter	=> $diam,
-	name		=> $name,
-	id		=> $name,
-    );
+sub __default {
+    my ( $class, $arg ) = @_;
+
+    my $name = $class->__model_definition( 'body' );
+    defined $arg->{id}
+	or $arg->{id} = $name;
+    defined $arg->{name}
+	or $arg->{name} = $name;
+
+    defined $arg->{diameter}
+	or $arg->{diameter} = $class->__model_definition( 'diameter' );
+
+    defined $arg->{model_cutoff}
+	or $arg->{model_cutoff} = 'Meeus';
+
+    defined $arg->{nutation_cutoff}
+	or $arg->{nutation_cutoff} = 3;
+
     return;
 }
 

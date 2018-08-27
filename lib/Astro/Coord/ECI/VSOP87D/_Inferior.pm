@@ -17,6 +17,12 @@ use Carp;
 
 our $VERSION = '0.000_01';
 
+sub new {
+    my ( $class, %arg ) = @_;
+    $class->__default( \%arg );
+    return $class->SUPER::new( %arg );
+}
+
 sub __almanac_event_type_iterator {
     my ( $self, $station ) = @_;
 

@@ -15,6 +15,12 @@ use Carp;
 
 our $VERSION = '0.000_01';
 
+sub new {
+    my ( $class, %arg ) = @_;
+    $class->__default( \%arg );
+    return $class->SUPER::new( %arg );
+}
+
 {
     my $get = sub {
 	my ( $self, $name ) = @_;
