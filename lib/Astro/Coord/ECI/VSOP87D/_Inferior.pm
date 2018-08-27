@@ -272,6 +272,25 @@ planet. It is a subclass of L<Astro::Coord::ECI|Astro::Coord::ECI>.
 This class supports the following public methods in addition to those
 inherited from the superclass.
 
+=head2 model_cutoff_definition
+
+This method reports, creates, and deletes model cutoff definitions.
+
+The first argument is the name of the model cutoff. If this is the only
+argument, a reference to a hash defining the named model cutoff is returned.
+This return is a deep clone of the actual definition.
+
+If the second argument is C<undef>, the named model cutoff is deleted. If the
+model cutoff does not exist, the call does nothing. It is an error to try to
+delete built-in cutoffs C<'none'> and C<'Meeus'>.
+
+If the second argument is a reference to a hash, this defines or
+redefines a model cutoff. The keys to the hash are the names of VSOP87D series
+(C<'L0'> through C<'L5'>, C<'B0'> through C<'B5'>, and C<'R0'> through
+C<'R5'>), and the value of each key is the number of terms of that
+series to use. If one of the keys is omitted or has a false value, that
+series is not used.
+
 =head2 next_quarter
 
  my ( $time, $quarter, $desc ) = $body->next_quarter( $want );
@@ -301,7 +320,78 @@ returned time.
 The method of calculation is successive approximation, and actually
 returns the second B<after> the calculated event.
 
-This mixin makes use of the following methods:
+=head2 nutation
+
+ my ( $delta_psi, $delta_epsilon ) =
+     $self->nutation( $dynamical_time, $cutoff );
+
+This method calculates the nutation in ecliptic longitude
+(C<$delta_psi>) and latitude (C<$delta_epsilon>) at the given dynamical
+time in seconds since the epoch (i.e. Perl time), according to the IAU
+1980 model.
+
+The C<$time> argument is optional, and defaults to the object's current
+dynamical time.
+
+The C<$cutoff> argument is optional; if specified as a number larger
+than C<0>, terms whose amplitudes are smaller than the model cutoff (in
+milli arc seconds) are ignored. The Meeus version of the algorithm is
+specified by a value of C<3>. The default is specified by the
+L<nutation_cutoff()|/nutation_cutoff> value.
+
+The model itself comes from Meeus chapter 22. The model parameters were
+not transcribed from that source, however, but were taken from the
+source IAU C reference implementation of the algorithm, F<src/nut80.c>,
+with the minimum modifications necessary to make the C code into Perl
+code. This file is contained in
+L<http://www.iausofa.org/2018_0130_C/sofa_c-20180130.tar.gz>.
+
+=head2 obliquity
+
+ $epsilon = $self->obliquity( $time );
+
+This method calculates the obliquity of the ecliptic in radians at
+the given B<dynamical> time. If the time is omitted or specified as
+C<undef>, the current dynamical time of the object is used.
+
+The algorithm is equation 22.3 from Jean Meeus' "Astronomical
+Algorithms", 2nd Edition, Chapter 22, pages 143ff.
+
+=head2 order
+
+ say 'Order from Sun: ', $self->order();
+
+This method returns the order of the body from the Sun, with the Sun
+itself being C<0>. The number C<3> is skipped, since that would
+represent the Earth.
+
+=head2 period
+
+ $self->period()
+
+This method returns the sidereal period of the object, calculated from
+the coefficient of its first C<L1> term.
+
+The algorithm is the author's, and is a first approximation. That is. it
+is just the tropical period plus however long it takes the object to
+cover the amount of precession during the tropical year.
+
+=head2 time_set
+
+ $self->time_set()
+
+This method is not normally called by the user. It is called by
+L<Astro::Coord::ECI|Astro::Coord::ECI> to compute the position once the
+time has been set.
+
+It returns the invocant.
+
+=head2 year
+
+ $self->year()
+
+This method returns the length of the tropical year of the object,
+calculated from the coefficient of its first C<L1> term.
 
 =head1 ATTRIBUTES
 

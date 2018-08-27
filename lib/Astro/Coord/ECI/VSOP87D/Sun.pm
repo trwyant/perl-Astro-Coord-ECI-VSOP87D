@@ -2692,6 +2692,11 @@ L<Astro::Coord::ECI::Sun|Astro::Coord::ECI::Sun>.
 This class supports the following public methods in addition to those of
 its superclass:
 
+=head2 geometric_longitude
+
+This method returns the geometric longitude of the body. This is after
+conversion to FK5.
+
 =head2 model_cutoff_definition
 
 This method reports, creates, and deletes model cutoff definitions.
@@ -2710,11 +2715,6 @@ series (C<'L0'> through C<'L5'>, C<'B0'> through C<'B5'>, and C<'R0'>
 through C<'R5'>), and the value of each key is the number of terms of
 that series to use. If one of the keys is omitted or has a false value,
 that series is not used.
-
-=head2 geometric_longitude
-
-This method returns the geometric longitude of the body. This is after
-conversion to FK5.
 
 =head2 next_quarter
 
@@ -2761,6 +2761,44 @@ C<undef>, the current dynamical time of the object is used.
 
 The algorithm is equation 22.3 from Jean Meeus' "Astronomical
 Algorithms", 2nd Edition, Chapter 22, pages 143ff.
+
+=head2 order
+
+ say 'Order from Sun: ', $self->order();
+
+This method returns the order of the body from the Sun, with the Sun
+itself being C<0>. The number C<3> is skipped, since that would
+represent the Earth.
+
+In fewer words, this method returns C<0>.
+
+=head2 period
+
+ $self->period()
+
+This method returns the sidereal period of the Earth, calculated from
+the coefficient of its first C<L1> term.
+
+The algorithm is the author's, and is a first approximation. That is. it
+is just the tropical period plus however long it takes the object to
+cover the amount of precession during the tropical year.
+
+=head2 time_set
+
+ $self->time_set()
+
+This method is not normally called by the user. It is called by
+L<Astro::Coord::ECI|Astro::Coord::ECI> to compute the position once the
+time has been set.
+
+It returns the invocant.
+
+=head2 year
+
+ $self->year()
+
+This method returns the length of the tropical year of the Earth,
+calculated from the coefficient of its first C<L1> term.
 
 =head1 ATTRIBUTES
 
