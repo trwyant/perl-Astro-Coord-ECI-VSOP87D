@@ -19,8 +19,9 @@ use Time::Local qw{ timegm };
 
     my $time = timegm( 0, 0, 0, 13, 9, 1992 );
 
-    my $sun = Astro::Coord::ECI::VSOP87D::Sun->new();
-    $sun->model_cutoff( CUTOFF );
+    my $sun = Astro::Coord::ECI::VSOP87D::Sun->new(
+	model_cutoff	=> CUTOFF,
+    );
 
     # Calling __model as a subroutine because the Sun carries the model
     # of the Earth, but its __model() is overridden to return zeroes.

@@ -15,6 +15,40 @@ use Carp;
 
 our $VERSION = '0.000_01';
 
+{
+    my $get = sub {
+	my ( $self, $name ) = @_;
+	return $self->__get_attr()->{$name};
+    };
+
+    my %accessor = (
+	model_cutoff		=> $get,
+	nutation_cutoff		=> $get,
+    );
+
+    sub attribute {
+	my ( $self, $name ) = @_;
+	exists $accessor{$name}
+	    and return __PACKAGE__;
+	return $self->SUPER::attribute( $name );
+    }
+
+    sub get {
+	my ( $self, @arg ) = @_;
+	my @rslt;
+	foreach my $name ( @arg ) {
+	    if ( my $code = $accessor{$name} ) {
+		push @rslt, $code->( $self, $name );
+	    } else {
+		push @rslt, $self->SUPER::get( $name );
+	    }
+	    wantarray
+		or return $rslt[0];
+	}
+	return @rslt;
+    }
+}
+
 sub __model {
     return ( ( 0 ) x 6 );
 }
@@ -2589,6 +2623,26 @@ sub __model_definition {
     }->{$key};
 }
 
+{
+    my %mutator = (
+	model_cutoff		=> \&__mutate_model_cutoff,
+	nutation_cutoff		=> \&__mutate_nutation_cutoff,
+    );
+
+    sub set {
+	my ( $self, @arg ) = @_;
+	while ( @arg ) {
+	    my ( $name, $value ) = splice @arg, 0, 2;
+	    if ( my $code = $mutator{$name} ) {
+		$code->( $self, $name, $value );
+	    } else {
+		$self->SUPER::set( $name, $value );
+	    }
+	}
+	return $self;
+    }
+}
+
 1;
 
 __END__
@@ -2631,28 +2685,6 @@ L<Astro::Coord::ECI::Sun|Astro::Coord::ECI::Sun>.
 
 This class supports the following public methods in addition to those of
 its superclass:
-
-=head2 model_cutoff
-
- say $self->model_cutoff()
- $self->model_cutoff( 'Meeus' );
-
-When called with an argument, this method is a mutator, changing the
-model cutoff value. When called without an argument, this method is an
-accessor, returning the current model cutoff value.
-
-The model cutoff value specifies how to truncate the calculation. Valid
-values are:
-
-=over
-
-=item C<'none'> specifies no model cutoff (i.e. the full series);
-
-=item C<'Meeus'> specifies the Meeus Appendix III series.
-
-=back
-
-The default is C<'Meeus'>.
 
 =head2 model_cutoff_definition
 
@@ -2713,28 +2745,6 @@ L<http://www.iausofa.org/2018_0130_C/sofa_c-20180130.tar.gz>.
 This method is exportable, either by name or via the C<:mixin> or
 C<:sun> tags.
 
-=head2 nutation_cutoff
-
- say $self->nutation_cutoff()
- $self->nutation_cutoff( 3 );
-
-When called with an argument, this method is a mutator, changing the
-nutation_cutoff value. When called without an argument, this method is
-an accessor, returning the current nutation_cutoff value.
-
-The nutation_cutoff value specifies how to truncate the nutation
-calculation. All terms whose magnitudes are less than the nutation
-cutoff are ignored. The value is in terms of 0.0001 seconds of arc, and
-must be a non-negative number.
-
-The default is C<3>, which is the value Meeus uses.
-
-This method is exportable, either by name or via the C<:mixin> or
-C<:sun> tags.
-
-This value is also available via the
-L<Astro::Coord::ECI|Astro::Coord::ECI> C<get()> and C<set()> methods.
-
 =head2 obliquity
 
  $epsilon = $self->obliquity( $time );
@@ -2745,6 +2755,35 @@ C<undef>, the current dynamical time of the object is used.
 
 The algorithm is equation 22.3 from Jean Meeus' "Astronomical
 Algorithms", 2nd Edition, Chapter 22, pages 143ff.
+
+=head1 ATTRIBUTES
+
+This class has the following attributes in addition to those of its
+superclass:
+
+=head2 model_cutoff
+
+This attribute specifies how to truncate the calculation. Valid values
+are:
+
+=over
+
+=item C<'none'> specifies no model cutoff (i.e. the full series);
+
+=item C<'Meeus'> specifies the Meeus Appendix III series.
+
+=back
+
+The default is C<'Meeus'>.
+
+=head2 nutation_cutoff
+
+The nutation_cutoff value specifies how to truncate the nutation
+calculation. All terms whose magnitudes are less than the nutation
+cutoff are ignored. The value is in terms of 0.0001 seconds of arc, and
+must be a non-negative number.
+
+The default is C<3>, which is the value Meeus uses.
 
 =head1 SEE ALSO
 

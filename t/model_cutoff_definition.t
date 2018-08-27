@@ -62,7 +62,7 @@ my %cutoff_def = (
 
 my $sun = Astro::Coord::ECI::VSOP87D::Sun->new();
 
-is $sun->model_cutoff(), 'Meeus', q<Default model cutoff is 'Meeus'>;
+is $sun->get( 'model_cutoff' ), 'Meeus', q<Default model cutoff is 'Meeus'>;
 
 is_deeply $sun->model_cutoff_definition(), $cutoff_def{Meeus},
     q<model_cutoff_definition() returns 'Meeus' definition>;
@@ -70,7 +70,7 @@ is_deeply $sun->model_cutoff_definition(), $cutoff_def{Meeus},
 is_deeply $sun->model_cutoff_definition( 'Meeus' ), $cutoff_def{Meeus},
     q<model_cutoff_definition( 'Meeus' ) returns 'Meeus' definition>;
 
-$sun->model_cutoff( 'none' );
+$sun->set( model_cutoff => 'none' );
 note q<cutoff changed to 'none'>;
 
 is_deeply $sun->model_cutoff_definition(), $cutoff_def{none},

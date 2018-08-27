@@ -62,6 +62,7 @@ sub __almanac_event_type_iterator {
     my %accessor = (
 	elongation_in_longitude	=> $get,
 	model_cutoff		=> $get,
+	nutation_cutoff		=> $get,
     );
 
     sub attribute {
@@ -199,22 +200,6 @@ sub next_quarter {
     }
 }
 
-# TODO this probably gets promoted to VSOP87D, exported by :mixin
-{
-    my @default_name = (
-	undef,
-	'%s transits meridian',
-    );
-
-    sub __transit_name {
-	my ( $self, $event, $name ) = @_;
-	$name ||= \@default_name;
-	defined $name->[$event]
-	    or return undef;	## no critic (ProhibitExplicitReturnUndef)
-	return sprintf $name->[$event], $self->get( 'name' );
-    }
-}
-
 {
     my $set = sub {
 	my ( $self, $name, $value ) = @_;
@@ -225,6 +210,7 @@ sub next_quarter {
     my %mutator = (
 	elongation_in_longitude	=> $set,
 	model_cutoff		=> \&__mutate_model_cutoff,
+	nutation_cutoff		=> \&__mutate_nutation_cutoff,
     );
 
     sub set {
@@ -238,6 +224,22 @@ sub next_quarter {
 	    }
 	}
 	return $self;
+    }
+}
+
+# TODO this probably gets promoted to VSOP87D, exported by :mixin
+{
+    my @default_name = (
+	undef,
+	'%s transits meridian',
+    );
+
+    sub __transit_name {
+	my ( $self, $event, $name ) = @_;
+	$name ||= \@default_name;
+	defined $name->[$event]
+	    or return undef;	## no critic (ProhibitExplicitReturnUndef)
+	return sprintf $name->[$event], $self->get( 'name' );
     }
 }
 
@@ -308,6 +310,29 @@ Sun as seen from the Earth, regardless of direction.
 
 The default is false.
 
+=head2 model_cutoff
+
+This attribute specifies how to truncate the calculation. Valid values
+are:
+
+=over
+
+=item C<'none'> specifies no model cutoff (i.e. the full series);
+
+=item C<'Meeus'> specifies the Meeus Appendix III series.
+
+=back
+
+The default is C<'Meeus'>.
+
+=head2 nutation_cutoff
+
+The nutation_cutoff value specifies how to truncate the nutation
+calculation. All terms whose magnitudes are less than the nutation
+cutoff are ignored. The value is in terms of 0.0001 seconds of arc, and
+must be a non-negative number.
+
+The default is C<3>, which is the value Meeus uses.
 
 =head1 SEE ALSO
 

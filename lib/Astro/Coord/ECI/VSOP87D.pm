@@ -30,9 +30,8 @@ our $VERSION = '0.000_01';
 
 my @basic_export = qw{
     SUN_CLASS
-    model_cutoff model_cutoff_definition
-    nutation nutation_cutoff obliquity order period time_set year
-    __access_model_cutoff __access_nutation_cutoff
+    model_cutoff_definition
+    nutation obliquity order period time_set year
     __get_attr __init
     __mutate_model_cutoff __mutate_nutation_cutoff
 };
@@ -58,7 +57,7 @@ sub time_set {
     my ( $self ) = @_;
     my $attr = $self->__get_attr();
     my $time = $self->dynamical();
-    my $cutoff = $self->model_cutoff();
+    my $cutoff = $self->get( 'model_cutoff' );
     my $cutoff_def = $self->model_cutoff_definition();
     my $sun = $self->get( 'sun' );
 
@@ -630,12 +629,6 @@ sub __init {
     return;
 }
 
-# To hook into the Astro::Coord::ECI get()/set() machinery
-sub __access_model_cutoff {
-    my ( $self ) = @_;
-    return $self->model_cutoff();
-}
-
 sub __mutate_model_cutoff {
     my ( $self, $name, $val ) = @_;
     defined $val
@@ -646,25 +639,10 @@ sub __mutate_model_cutoff {
     return $self;
 }
 
-sub model_cutoff {
-    my ( $self, @arg ) = @_;
-    my $attr = $self->__get_attr();
-    if ( @arg ) {
-	defined $arg[0]
-	    or croak "model cutoff must be defined";
-	$self->model_cutoff_definition( $arg[0] )
-	    or croak "model cutoff '$arg[0]' is unknown";
-	$attr->{model_cutoff} = $arg[0];
-	return $self;
-    } else {
-	return $attr->{model_cutoff};
-    }
-}
-
 sub model_cutoff_definition {
     my ( $self, $name, @arg ) = @_;
     defined $name
-	or $name = $self->model_cutoff();
+	or $name = $self->get( 'model_cutoff' );
     my $attr = $self->__get_attr();
     if ( @arg ) {
 	if ( defined( my $val = $arg[0] ) ) {
@@ -773,32 +751,15 @@ EOD
     return ( @p_vec, @v_vec );
 }
 
-# To hook into the Astro::Coord::ECI get()/set() machinery
-sub __access_nutation_cutoff {
-    my ( $self ) = @_;
-    return $self->nutation_cutoff();
-}
-
 sub __mutate_nutation_cutoff {
     my ( $self, undef, $val ) = @_;
-    $self->nutation_cutoff( $val );
+    defined $val
+	or croak 'Nutation cutoff must be defined';
+    looks_like_number( $val )
+	and $val >= 0
+	or croak 'Nutation cutoff must be a non-negative number';
+    $self->__get_attr()->{nutation_cutoff} = $val;
     return $self;
-}
-
-sub nutation_cutoff {
-    my ( $self, @arg ) = @_;
-    my $attr = $self->__get_attr();
-    if ( @arg ) {
-	defined $arg[0]
-	    or croak 'Nutation cutoff must be defined';
-	looks_like_number( $arg[0] )
-	    and $arg[0] >= 0
-	    or croak 'Nutation cutoff must be a non-negative number';
-	$attr->{nutation_cutoff} = $arg[0];
-	return $self;
-    } else {
-	return $attr->{nutation_cutoff};
-    }
 }
 
 sub obliquity {
@@ -899,34 +860,6 @@ This module does not implement a class, and is better regarded as a
 mixin.  It supports the following methods, which are public and
 exportable unless documented otherwise.
 
-=head2 model_cutoff
-
- say $self->model_cutoff()
- $self->model_cutoff( 'Meeus' );
-
-When called with an argument, this method is a mutator, changing the
-model cutoff value. When called without an argument, this method is an
-accessor, returning the current model cutoff value.
-
-The model cutoff value specifies how to truncate the calculation. Valid values
-are:
-
-=over
-
-=item C<'none'> specifies no model cutoff (i.e. the full series);
-
-=item C<'Meeus'> specifies the Meeus Appendix III series.
-
-=back
-
-The default is C<'Meeus'>.
-
-This method is exportable, either by name or via the C<:mixin> or
-C<:sun> tags.
-
-This value is also available via the
-L<Astro::Coord::ECI|Astro::Coord::ECI> C<get()> and C<set()> methods.
-
 =head2 model_cutoff_definition
 
 This method reports, creates, and deletes model cutoff definitions.
@@ -997,7 +930,7 @@ The C<$cutoff> argument is optional; if specified as a number larger
 than C<0>, terms whose amplitudes are smaller than the nutation cutoff
 (in milli arc seconds) are ignored. The Meeus version of the algorithm
 is specified by a value of C<3>. The default is specified by the
-L<nutation_cutoff()|/nutation_cutoff> value.
+C<nutation_cutoff> attribute.
 
 The model itself comes from Meeus chapter 22. The model parameters were
 not transcribed from that source, however, but were taken from the
@@ -1008,28 +941,6 @@ L<http://www.iausofa.org/2018_0130_C/sofa_c-20180130.tar.gz>.
 
 This method is exportable, either by name or via the C<:mixin> or
 C<:sun> tags.
-
-=head2 nutation_cutoff
-
- say $self->nutation_cutoff()
- $self->nutation_cutoff( 3 );
-
-When called with an argument, this method is a mutator, changing the
-nutation_cutoff value. When called without an argument, this method is
-an accessor, returning the current nutation_cutoff value.
-
-The nutation_cutoff value specifies how to truncate the nutation
-calculation. All terms whose magnitudes are less than the nutation
-cutoff are ignored. The value is in terms of 0.0001 seconds of arc, and
-must be a non-negative number.
-
-The default is C<3>, which is the value Meeus uses.
-
-This method is exportable, either by name or via the C<:mixin> or
-C<:sun> tags.
-
-This value is also available via the
-L<Astro::Coord::ECI|Astro::Coord::ECI> C<get()> and C<set()> methods.
 
 =head2 obliquity
 

@@ -1886,28 +1886,6 @@ L<Astro::Coord::ECI::VSOP87D::_Inferior|Astro::Coord::ECI::VSOP87D::_Inferior>.
 This class supports the following public methods in addition to those of
 its superclass:
 
-=head2 model_cutoff
-
- say $self->model_cutoff()
- $self->model_cutoff( 'Meeus' );
-
-When called with an argument, this method is a mutator, changing the
-model cutoff value. When called without an argument, this method is an
-accessor, returning the current model cutoff value.
-
-The model cutoff value specifies how to truncate the calculation. Valid values
-are:
-
-=over
-
-=item C<'none'> specifies no model cutoff (i.e. the full series);
-
-=item C<'Meeus'> specifies the Meeus Appendix III series.
-
-=back
-
-The default is C<'Meeus'>.
-
 =head2 model_cutoff_definition
 
 This method reports, creates, and deletes model cutoff definitions.
@@ -1952,25 +1930,6 @@ source IAU C reference implementation of the algorithm, F<src/nut80.c>,
 with the minimum modifications necessary to make the C code into Perl
 code. This file is contained in
 L<http://www.iausofa.org/2018_0130_C/sofa_c-20180130.tar.gz>.
-
-=head2 nutation_cutoff
-
- say $self->nutation_cutoff()
- $self->nutation_cutoff( 3 );
-
-When called with an argument, this method is a mutator, changing the
-nutation_cutoff value. When called without an argument, this method is
-an accessor, returning the current nutation_cutoff value.
-
-The nutation_cutoff value specifies how to truncate the nutation
-calculation. All terms whose magnitudes are less than the nutation
-cutoff are ignored. The value is in terms of 0.0001 seconds of arc, and
-must be a non-negative number.
-
-The default is C<3>, which is the value Meeus uses.
-
-This value is also available via the
-L<Astro::Coord::ECI|Astro::Coord::ECI> C<get()> and C<set()> methods.
 
 =head2 obliquity
 
@@ -2048,4 +2007,4 @@ merchantability or fitness for a particular purpose.
 
 =cut
 
-# ex: set textwidth=72 :
+# ex: set filetype=perl textwidth=72 :

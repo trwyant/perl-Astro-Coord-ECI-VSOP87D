@@ -18,8 +18,9 @@ use Time::Local qw{ timegm };
 
 {
     my $time = timegm( 0, 0, 0, 20, 11, 1992 );
-    my $venus = Astro::Coord::ECI::VSOP87D::Venus->new();
-    $venus->model_cutoff( CUTOFF );
+    my $venus = Astro::Coord::ECI::VSOP87D::Venus->new(
+	model_cutoff	=> CUTOFF,
+    );
     my $cutoff_def = $venus->model_cutoff_definition();
 
     my ( $L, $B, $R ) = $venus->__model(
