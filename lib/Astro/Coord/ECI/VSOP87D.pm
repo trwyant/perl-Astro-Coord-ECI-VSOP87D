@@ -41,11 +41,21 @@ our @EXPORT_OK = (
     @basic_export,
     qw{
 	geometric_longitude
+	__angle_subtended_from_earth
+	__horizon_name
+	__longitude_from_sun
 	__model
+	__transit_name
     },
 );
 our %EXPORT_TAGS = (
-    mixin	=> [ @basic_export, qw{ __model } ],
+    mixin	=> [ @basic_export, qw{
+	__angle_subtended_from_earth
+	__horizon_name
+	__longitude_from_sun
+	__model
+	__transit_name
+    } ],
     sun		=> [ @basic_export, qw{ geometric_longitude } ],
 );
 
@@ -379,12 +389,56 @@ EOD
     return $self;
 }
 
+{
+    my $earth;
+
+    sub __angle_subtended_from_earth {
+	my ( $self, $time ) = @_;
+	$earth ||= Astro::Coord::ECI->new()->eci( 0, 0, 0 );
+	$self->universal( $time );
+	my $sun = $self->get( 'sun' )->universal( $time );
+	$earth->universal( $time );
+	return $earth->angle( $self, $sun );
+    }
+}
+
 sub geometric_longitude {
     my ( $self ) = @_;
     my $attr = $self->__get_attr();
     defined $attr->{geometric_longitude}
 	and return $attr->{geometric_longitude};
     croak 'Geometric longitude undefined -- time not set';
+}
+
+{
+    my @default_name = (
+	'%s sets',
+	'%s rises',
+    );
+
+    sub __horizon_name {
+	my ( $self, $event, $name ) = @_;
+	$name ||= \@default_name;
+	return sprintf $name->[$event], $self->get( 'name' );
+    }
+}
+
+sub __longitude_from_sun {
+    my ( $self, $time, $offset ) = @_;
+    $offset ||= 0;
+
+    if ( defined $time ) {
+	$self->universal( $time );
+    } else {
+	$time = $self->universal();
+    }
+
+    my $sun = $self->get( 'sun' )->universal( $time );
+
+    my ( undef, $lon_b ) = $self->ecliptic();
+    my ( undef, $lon_s ) = $sun->ecliptic();
+
+    return mod2pi( $lon_b - $lon_s - $offset + PI ) - PI;
 }
 
 BEGIN {
@@ -822,6 +876,22 @@ sub order {
 sub period {
     my ( $self ) = @_;
     return $self->__model_definition( 'sidereal_period' );
+}
+
+# TODO this probably gets promoted to VSOP87D, exported by :mixin
+{
+    my @default_name = (
+	undef,
+	'%s transits meridian',
+    );
+
+    sub __transit_name {
+	my ( $self, $event, $name ) = @_;
+	$name ||= \@default_name;
+	defined $name->[$event]
+	    or return undef;	## no critic (ProhibitExplicitReturnUndef)
+	return sprintf $name->[$event], $self->get( 'name' );
+    }
 }
 
 sub year {

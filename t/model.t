@@ -33,6 +33,7 @@ foreach my $fn ( bsd_glob( 't/data/vsop87*.*' ) ) {
     open my $fh, '<', $fn
 	or BAIL_OUT "Failed to open $fn: $!";
 
+    my $year;
     while ( <$fh> ) {
 	my ( $dt, @want ) = unpack 'A16(A14)6', $_;
 	$dt =~ s/ \A [+\s] //smx;
@@ -41,6 +42,11 @@ foreach my $fn ( bsd_glob( 't/data/vsop87*.*' ) ) {
 	$dt =~ m/ \A ( [+-]? [0-9]{4} ) ( [0-9]{2} ) ( [0-9]{2} ) .
 	( [0-9]{2} ) ( [0-9]{2} ) ( [0-9]{2} ) \z /smx
 	    or next;
+	not $ENV{AUTHOR_TESTING}
+	    and defined $year
+	    and $1 eq $year
+	    and next;
+	$year = $1;
 	my $time = date2epoch( $6, $5, $4, $3, $2 - 1, $1 - 1900 );
 	my @got = map { sprintf '%.10f', $_ } __model(
 	    $class, $time,

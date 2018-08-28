@@ -45,20 +45,6 @@ sub __almanac_event_type_iterator {
     };
 }
 
-# TODO this probably gets promoted to VSOP87D, exported by :mixin
-{
-    my $earth;
-
-    sub __angle_subtended_from_earth {
-	my ( $self, $time ) = @_;
-	$earth ||= Astro::Coord::ECI->new()->eci( 0, 0, 0 );
-	$self->universal( $time );
-	my $sun = $self->get( 'sun' )->universal( $time );
-	$earth->universal( $time );
-	return $earth->angle( $self, $sun );
-    }
-}
-
 {
     my $get = sub {
 	my ( $self, $name ) = @_;
@@ -92,38 +78,6 @@ sub __almanac_event_type_iterator {
 	}
 	return @rslt;
     }
-}
-
-# TODO this probably gets promoted to VSOP87D, exported by :mixin
-{
-    my @default_name = (
-	'%s set',
-	'%s rise',
-    );
-
-    sub __horizon_name {
-	my ( $self, $event, $name ) = @_;
-	$name ||= \@default_name;
-	return sprintf $name->[$event], $self->get( 'name' );
-    }
-}
-
-# TODO this probably gets promoted to VSOP87D, exported by :mixin
-sub __longitude_from_sun {
-    my ( $self, $time ) = @_;
-
-    if ( defined $time ) {
-	$self->universal( $time );
-    } else {
-	$time = $self->universal();
-    }
-
-    my $sun = $self->get( 'sun' )->universal( $time );
-
-    my ( undef, $lon_b ) = $self->ecliptic();
-    my ( undef, $lon_s ) = $sun->ecliptic();
-
-    return mod2pi( $lon_b - $lon_s + PI ) - PI;
 }
 
 sub next_quarter {
@@ -230,22 +184,6 @@ sub next_quarter {
 	    }
 	}
 	return $self;
-    }
-}
-
-# TODO this probably gets promoted to VSOP87D, exported by :mixin
-{
-    my @default_name = (
-	undef,
-	'%s transits meridian',
-    );
-
-    sub __transit_name {
-	my ( $self, $event, $name ) = @_;
-	$name ||= \@default_name;
-	defined $name->[$event]
-	    or return undef;	## no critic (ProhibitExplicitReturnUndef)
-	return sprintf $name->[$event], $self->get( 'name' );
     }
 }
 
