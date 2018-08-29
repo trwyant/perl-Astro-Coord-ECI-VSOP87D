@@ -29,5 +29,6 @@ merchantability
 milli
 nutation
 precession
+synodic
 VSOP
 Wyant

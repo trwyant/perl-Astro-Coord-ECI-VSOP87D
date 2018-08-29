@@ -41,6 +41,7 @@ our @EXPORT_OK = (
     @basic_export,
     qw{
 	geometric_longitude
+	synodic_period
 	__angle_subtended_from_earth
 	__horizon_name
 	__longitude_from_sun
@@ -50,6 +51,7 @@ our @EXPORT_OK = (
 );
 our %EXPORT_TAGS = (
     mixin	=> [ @basic_export, qw{
+	synodic_period
 	__angle_subtended_from_earth
 	__horizon_name
 	__longitude_from_sun
@@ -884,7 +886,14 @@ sub period {
     return $self->__model_definition( 'sidereal_period' );
 }
 
-# TODO this probably gets promoted to VSOP87D, exported by :mixin
+# https://in-the-sky.org/article.php?term=synodic_period
+# Note that I chose NOT to precalculate this because it depends on the
+# period of the 'sun' attribute, which may change.
+sub synodic_period {
+    my ( $self ) = @_;
+    return( 1 / abs( 1 / $self->get( 'sun' )->year() - 1 / $self->year() ) );
+}
+
 {
     my @default_name = (
 	undef,
@@ -1064,6 +1073,14 @@ cover the amount of precession during the tropical year.
 
 This method is exportable, either by name or via the C<:mixin> or
 C<:sun> tags.
+
+=head2 synodic_period
+
+ $self->synodic_period()
+
+This method returns the synodic period of the object -- that is to say
+the mean interval between oppositions or conjunctions of superior
+planets or between corresponding conjunctions of inferior planets.
 
 =head2 time_set
 

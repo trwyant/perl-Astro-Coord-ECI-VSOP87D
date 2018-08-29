@@ -91,7 +91,7 @@ sub next_quarter {
 	'__longitude_from_sun' :
 	'__angle_subtended_from_earth';
 
-    my $increment = $self->period() / 16;
+    my $increment = $self->synodic_period() / 16;
 
     my @checker = (
 	sub {	# 0 = superior conjunction
@@ -319,6 +319,14 @@ the coefficient of its first C<L1> term.
 The algorithm is the author's, and is a first approximation. That is. it
 is just the tropical period plus however long it takes the object to
 cover the amount of precession during the tropical year.
+
+=head2 synodic_period
+
+ $self->synodic_period()
+
+This method returns the synodic period of the object -- that is to say
+the mean interval between oppositions or conjunctions of superior
+planets or between corresponding conjunctions of inferior planets.
 
 =head2 time_set
 
