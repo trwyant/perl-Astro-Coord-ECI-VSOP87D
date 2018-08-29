@@ -80,8 +80,10 @@ sub __almanac_event_type_iterator {
     }
 }
 
+# NOTE that the %opt arguments are UNSUPPORTED and can be changed or
+# removed without notice. Caveat codor.
 sub next_quarter {
-    my ( $self, $quarter ) = @_;
+    my ( $self, $quarter, %opt ) = @_;
 
     my $time = $self->universal();
 
@@ -111,6 +113,10 @@ sub next_quarter {
 		$self->$elong_method( $time - 1 ) ? 3 : 0;
 	},
     );
+
+    if ( defined $opt{checker_result} ) {
+	return $checker[$opt{checker_result}]->( $time );
+    }
 
     my $test;
     if ( defined $quarter ) {

@@ -5,7 +5,8 @@ use 5.008;
 use strict;
 use warnings;
 
-use Astro::Coord::ECI::Utils qw{ AU rad2deg };
+use Astro::Coord::ECI;
+use Astro::Coord::ECI::Utils qw{ AU deg2rad rad2deg };
 use Carp;
 use Exporter qw{ import };
 use Test::More 0.88;	# Because of done_testing();
@@ -16,6 +17,9 @@ our @EXPORT = qw{
     is_au_au
     is_km_au
     is_rad_deg
+    strftime_h
+    strftime_m
+    washington_dc
 };
 
 use constant 'Astro::Coord::ECI::VSOP87D::DEBUG' => $ENV{VSOP87D_DEBUG};
@@ -47,6 +51,24 @@ sub is_rad_deg ($$$$) {
     goto &is;
 }
 
+sub strftime_h {
+    my ( $time ) = @_;
+    return POSIX::strftime( '%Y-%m-%d %H', gmtime( $time + 1800 ) );
+}
+
+sub strftime_m {
+    my ( $time ) = @_;
+    return POSIX::strftime( '%Y-%m-%d %H:%M', gmtime( $time + 30 ) );
+}
+
+sub washington_dc {
+    return Astro::Coord::ECI->new(
+    )->geodetic(
+	deg2rad( 38.89 ),
+	deg2rad( -77.03 ),
+	0,
+    );
+}
 
 1;
 
@@ -149,6 +171,22 @@ formatted to the number of decimal places specified by the third
 argument, using C<sprintf "%.${dp}f">. The altered first and second
 arguments, plus the fourth argument, are passed to C<Test::More::is()>
 using a co-routine call.
+
+=head2 strftime_h
+
+This subroutine takes as its argument a Perl time, formats it as a time
+in UT, to the nearest hour. The format is C<'%Y-%m-%d %H'>.
+
+=head2 strftime_m
+
+This subroutine takes as its argument a Perl time, formats it as a time
+in UT, to the nearest minute. The format is C<'%Y-%m-%d %H:%M'>.
+
+=head2 washington_dc
+
+This subroutine takes no arguments. It returns an
+L<Astro::Coord::ECI|Astro::Coord::ECI> object representing the United
+States Naval Observatory's position for Washington D.C.
 
 =head1 MANIFEST CONSTANTS
 

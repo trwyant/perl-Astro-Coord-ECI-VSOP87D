@@ -22,6 +22,9 @@ t/data/vsop87d.venus
 t/meeus_25b.t
 t/meeus_33a.t
 t/model.t
+t/planet_mercury.t
+t/planet_venus.t
+t/sun.t
 tools/decode
 tools/README
 tools/reference

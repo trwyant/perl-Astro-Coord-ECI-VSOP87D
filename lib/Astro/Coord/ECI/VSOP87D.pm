@@ -392,13 +392,19 @@ EOD
 {
     my $earth;
 
+    # NOTE that the sign of the angle returned is the same as the sign
+    # of the result of __longitude_from_sun().
     sub __angle_subtended_from_earth {
 	my ( $self, $time ) = @_;
+	defined $time
+	    or $time = $self->universal();
 	$earth ||= Astro::Coord::ECI->new()->eci( 0, 0, 0 );
 	$self->universal( $time );
 	my $sun = $self->get( 'sun' )->universal( $time );
 	$earth->universal( $time );
-	return $earth->angle( $self, $sun );
+	my $lon = $self->__longitude_from_sun();
+	my $angle = $earth->angle( $self, $sun );
+	return $lon < 0 ? -$angle : $angle;
     }
 }
 
