@@ -35,7 +35,7 @@ t/sun.t
 tools/decode
 tools/README
 tools/reference
-tools/template.txt
+tools/template.pm
 xt/author/changes.t
 xt/author/critic.t
 xt/author/executable.t
