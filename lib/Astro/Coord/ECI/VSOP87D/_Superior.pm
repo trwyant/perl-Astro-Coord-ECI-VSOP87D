@@ -147,9 +147,9 @@ sub next_quarter {
 {
     my @default_name = (
 	'%s conjunction',
-	'%s east quadrature',
-	'%s opposition',
 	'%s west quadrature',
+	'%s opposition',
+	'%s east quadrature',
     );
 
     sub __quarter_name {
