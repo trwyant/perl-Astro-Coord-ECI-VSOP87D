@@ -6,14 +6,16 @@ C     must make use of one of the VSOP87D models, and be named
 C     'vsop87d.xxxxx', where the 'xxxxx' is the name of the body
 C     modelled, in all lower-case.
 C
-C     The input is on standard input. The first line is the path
-C     to the model to use (and can be relative). Subsequent lines
-C     of input are in groups of three, and consist of the start time
-C     to model in ISO-8601 format, the end time in ISO-8601 format,
-C     and the interval to generate as dhhmmss (days, hours, minutes,
-C     and seconds). The hours, minutes, and seconds must be two
-C     digits. The days can be any number of digits up to the allowed
-C     size of an integer.
+C     The interface is a bit of a hodge-podge.
+C     * The path to the model file is specified on the command line.
+C     * Standard input specifies what times to generate test data for.
+C       This is lines in groups of three, with each group specifying the
+C       start time in ISO-8601 format with leading sign for year, the
+C       end time in the same firmat, and the interval between test data
+C       points as dhhmmss (days, hours, minutes and seconds).  The
+C       hours, minutes, and seconds must be two digits. The days can be
+C       any number of digits up to the allowed size of an integer.
+C     * The test data are written to standard output.
 
 C     Other than the main line, which is entirely my own, the only
 C     modification is that the IVERS and IBODY arguments to subroutine
@@ -57,16 +59,16 @@ C     http://cdsarc.u-strasbg.fr/viz-bin/qcat?VI/81/
       inlun = 0
 
 C     Input file
-C     Can't use * format because / causes the input to terminate
-      read( *, '(A)', end=9900 ) infile
+      if ( iargc() .le. 0 ) goto 9000
+      call getarg( 1, infile )
 C     This is junk, but I can't get size= to work, and they dropped
 C     Q format in Fortran 90
       inlen = index( infile, ' ' ) - 1;
       write( stderr, * ) 'Input file: "', infile(:inlen), '"'
 
       inquire( file=infile, exist=exists )
-      if ( .not. exists ) goto 9000
-      open( 1, file=infile, status='old', err=9010 )
+      if ( .not. exists ) goto 9010
+      open( 1, file=infile, status='old', err=9020 )
       inlun = 1
 
 C     Start date and time, ISO-8601 strict
@@ -111,10 +113,14 @@ C     Interval, dddhhmmss
       goto 1200
 
 9000  continue
-      print *, 'Failed to find file "', infile(:inlen), '"'
+      print *, 'Model file not specified'
       goto 9900
 
 9010  continue
+      print *, 'Failed to find file "', infile(:inlen), '"'
+      goto 9900
+
+9020  continue
       print *, 'Failed to open file "', infile(:inlen), '"'
       goto 9900
 

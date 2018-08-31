@@ -35,7 +35,8 @@ t/planet_mercury.t
 t/planet_saturn.t
 t/planet_venus.t
 t/sun.t
-tools/decode
+tools/generate
+tools/generate.data
 tools/README
 tools/reference
 tools/template.pm

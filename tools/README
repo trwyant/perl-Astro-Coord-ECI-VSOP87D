@@ -4,11 +4,13 @@ wit:
 * README
   This file.
 
-* decode
-  This Perl script reads one of the files that describes a VSOP87 model,
-  parses it, and deparses it into Perl using Data::Dumper. The input
-  file is specified on the command line. If none, the input is read from
-  standard in. Output goes to standard out.
+* generate
+  This Perl script generates the Perl module and t/data/ test file for
+  planets named on the command line.
+
+* generate.data
+  This text file is input to ref-data to generate t/data/ files. See the
+  comments in ref-data.f for details.
 
 * ref-data.f
   This Fortran 95 program is derived from example.f which is distributed
