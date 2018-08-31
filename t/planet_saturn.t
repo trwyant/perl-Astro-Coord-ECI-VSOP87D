@@ -81,8 +81,6 @@ EOD
 
 $saturn->universal(
     timegm( 0, 0, 4, 1, 3, 2018 ) );	# Midnight local.
-					# Saturn is already risen at
-					# this point
 
 note 'Rise';
 ( $time, my $rise ) = $saturn->next_elevation();
