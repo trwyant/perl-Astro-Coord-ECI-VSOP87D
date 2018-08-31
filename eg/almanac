@@ -87,7 +87,9 @@ if ( $opt{classic} ) {
 	station			=> $loc,
     )->almanac( $start, $end );
 } else {
-    foreach my $body ( qw{ Sun Mercury Venus Mars Jupiter Saturn } ) {
+    foreach my $body ( qw{
+	Sun Mercury Venus Mars Jupiter Saturn Uranus Neptune }
+    ) {
 	my $class = "Astro::Coord::ECI::VSOP87D::$body";
 	( my $fn = "$class.pm" ) =~ s< :: ></>smxg;
 	require $fn;

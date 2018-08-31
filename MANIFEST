@@ -10,8 +10,10 @@ lib/Astro/Coord/ECI/VSOP87D/_Superior.pm
 lib/Astro/Coord/ECI/VSOP87D/Jupiter.pm
 lib/Astro/Coord/ECI/VSOP87D/Mars.pm
 lib/Astro/Coord/ECI/VSOP87D/Mercury.pm
+lib/Astro/Coord/ECI/VSOP87D/Neptune.pm
 lib/Astro/Coord/ECI/VSOP87D/Saturn.pm
 lib/Astro/Coord/ECI/VSOP87D/Sun.pm
+lib/Astro/Coord/ECI/VSOP87D/Uranus.pm
 lib/Astro/Coord/ECI/VSOP87D/Venus.pm
 LICENSES/Artistic
 LICENSES/Copying
@@ -23,8 +25,10 @@ t/model_cutoff_definition.t
 t/data/vsop87d.jupiter
 t/data/vsop87d.mars
 t/data/vsop87d.mercury
+t/data/vsop87d.neptune
 t/data/vsop87d.saturn
 t/data/vsop87d.sun
+t/data/vsop87d.uranus
 t/data/vsop87d.venus
 t/meeus_25b.t
 t/meeus_33a.t
@@ -32,7 +36,9 @@ t/model.t
 t/planet_jupiter.t
 t/planet_mars.t
 t/planet_mercury.t
+t/planet_neptune.t
 t/planet_saturn.t
+t/planet_uranus.t
 t/planet_venus.t
 t/sun.t
 tools/generate
