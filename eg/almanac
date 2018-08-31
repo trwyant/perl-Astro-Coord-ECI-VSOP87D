@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl
 
-# Display Sun and Moon rise and set for a pre-programmed position. The
+# Display Sun and planet rise and set for a pre-programmed position. The
 # -help option gets you help.
 
 use 5.008;
@@ -16,9 +16,6 @@ use POSIX qw{ strftime };
 use Time::Local;
 
 our $VERSION = '0.099';
-
-# TODO get rid of this once the per-class logic gets propagated.
-# local $Astro::Coord::ECI::Sun::Singleton = 0;
 
 Getopt::Long::Configure( 'pass_through' );	# Numbers may be negative.
 
@@ -47,12 +44,12 @@ my @args = @ARGV;
 @args
     or @args = ( 38.898748, -77.037684, 16.68 );
 
-#	Stash position where it's convenient.
+# Stash position where it's convenient.
 
 my ( $lat, $lon, $hgt ) = @args;
 
-#	Start time is the previous midnight. Unless -tomorrow is
-#	set, in which case it's the next midnight.
+# Start time is the previous midnight. Unless -tomorrow is set, in which
+# case it's the next midnight.
 
 my $start;
 if ( defined $opt{date} ) {
@@ -64,43 +61,40 @@ if ( defined $opt{date} ) {
     $start += 86400 if $opt{tomorrow};
 }
 
-#	The end time is the start time + 1 day.
+# The end time is the start time + 1 day.
 
 my $end = $start + 86400;
 
-#	Create an object representing our location. Remember that
-#	angles are in radians, and distance in kilometers.
+# Create an object representing our location. Remember that angles are
+# in radians, and distance in kilometers.
 
 my $loc = Astro::Coord::ECI->geodetic(
     deg2rad( $lat ), deg2rad( $lon ), $hgt/1000 );
 
-#	Generate the almanac data for the Sun and Moon if each is
-#	desired. We instantiate the luminary, call almanac() on it, and
-#	then throw it away.
+# Generate the almanac data. We instantiate the luminary, call almanac()
+# on it, and then throw it away.
 
 
 my @almanac;
 
-if ( $opt{classic} ) {
-    my @almanac = $sun_class->new(
-	iterate_for_quarters	=> $opt{iterate_for_quarters},
-	station			=> $loc,
-    )->almanac( $start, $end );
-} else {
-    foreach my $body ( qw{
-	Sun Mercury Venus Mars Jupiter Saturn Uranus Neptune }
-    ) {
-	my $class = "Astro::Coord::ECI::VSOP87D::$body";
-	( my $fn = "$class.pm" ) =~ s< :: ></>smxg;
-	require $fn;
-	push @almanac, $class->new(
-	    station	=> $loc,
-	)->set( model_cutoff => 'Meeus' )->almanac( $start, $end );
-    }
+push @almanac, $sun_class->new(
+    iterate_for_quarters	=> $opt{iterate_for_quarters},
+    station			=> $loc,
+)->almanac( $start, $end );
+
+foreach my $body ( qw{
+    Mercury Venus Mars Jupiter Saturn Uranus Neptune }
+) {
+    my $class = "Astro::Coord::ECI::VSOP87D::$body";
+    ( my $fn = "$class.pm" ) =~ s< :: ></>smxg;
+    require $fn;
+    push @almanac, $class->new(
+	station	=> $loc,
+    )->set( model_cutoff => 'Meeus' )->almanac( $start, $end );
 }
 
-#	Display the time and the text description of the events, in
-#	order of increasing time.
+# Display the time and the text description of the events, in order of
+# increasing time.
 
 print "$sun_class\n";
 foreach (sort {$a->[0] <=> $b->[0]} @almanac) {
@@ -127,7 +121,7 @@ almanac - Generate almanac data for a given location
 
 If this Boolean option is asserted,
 L<Astro::Coord::ECI::Sun|Astro::Coord::ECI::Sun> is used for the
-almanac. Otherwise
+Sun. Otherwise
 L<Astro::Coord::ECI::VSOP87D::Sun|Astro::Coord::ECI::VSOP87D::Sun> is
 used.
 
@@ -160,13 +154,13 @@ This option displays the version of this script. The script then exits.
 
 =head1 DETAILS
 
-This Perl script displays today's solar almanac for the position given
-on the command line, in latitude north of the Equator, longitude east of
-the prime meridian, and meters above sea level. If no position is given
-on the command line, the contents of environment variable
-C<ALMANAC_POSITION> are broken on spaces and used as the posiiton. If
-this environment variable is not found, the position of the White House
-in Washington DC USA is used.
+This Perl script displays today's solar and planetary almanac for the
+position given on the command line, in latitude north of the Equator,
+longitude east of the prime meridian, and meters above sea level. If no
+position is given on the command line, the contents of environment
+variable C<ALMANAC_POSITION> are broken on spaces and used as the
+posiiton. If this environment variable is not found, the position of the
+White House in Washington DC USA is used.
 
 You can look a day ahead by specifying C<-tomorrow>.
 
