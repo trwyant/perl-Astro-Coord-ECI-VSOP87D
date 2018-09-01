@@ -938,19 +938,134 @@ Astro::Coord::ECI::VSOP87D - Implement the VSOP87D position model.
 
 =head1 DESCRIPTION
 
-This Perl module implements the VSOP87D model in a manner that is
-consistent with the L<Astro::Coord::ECI|Astro::Coord::ECI> hierarchy.
+This Perl module implements the VSOP87D model of planetary motion in a
+manner that is consistent with the
+L<Astro::Coord::ECI|Astro::Coord::ECI> hierarchy.
 
-To use this module, subclass a member of the
-L<Astro::Coord::ECI|Astro::Coord::ECI> hierarchy and import
-L<cutoff()|/cutoff> and L<time_set()|/time_set> from this module. You
-must also provide a L<__model_definition()|/__model_definition>
-method that returns the model parameters you wish to implement.
+The VSOP87 models calculate the positions of the planets through Neptune
+as a series of cosine terms. They were created by Pierre Bretagnon and
+Gerard Francou of the Bureau des Longitudes in Paris France. Depending
+on the model you select, you can calculate either instantaneous orbital
+parameters, Heliocentric ecliptic position in either spherical or
+Cartesian coordinates and either current or J2000.0 equinox, or
+barycentric ecliptic position.
+
+The models are stated to be within 1 second of arc for varying times
+around J2000 (about noon January 1 2000 UT), as follows:
+
+ 4000 years for Mercury, Venus, Earth-Moon barycenter, Mars
+ 2000 years for Jupiter and Saturn
+ 6000 years for Uranus and Neptune
+
+The actual model coefficients are available from
+L<http://cdsarc.u-strasbg.fr/viz-bin/qcat?VI/81/>, as is additional
+information the accuracy of the model, and a reference implementation in
+Fortran.
+
+VSOP87D provides Heliocentric spherical coordinates referred to the
+current equinox. This is consistent with the existing members of the
+L<Astro::Coord::ECI|Astro::Coord::ECI> hierarchy, but more importantly
+Jean Meeus' Astronomical Algorithms provides worked examples for the Sun
+and Venus.
+
+The VSOP87D model itself is simple enough to implement, and occupies
+about 50 lines of Perl. Testing shows that the Perl solution for a given
+body and time is within C<5e-9> of the Fortran reference implementation
+over selected years in the range -4000 to 2300. The units of that
+C<5e-9> vary, being radians for longitude and latitude, AU for radius,
+and radians/day and AU/day for the corresponding velocities.
+
+One of the advantages of the VSOP87 models over the previous VSOP82
+models is that they are easily truncated when less than full precision
+is required. Meeus has his own truncation, which is the default one. In
+addition, this code provides truncation C<'none'>, which uses the whole
+model, and a mechanism to define custom truncations.
+
+As the examples make clear, the devil is in the details, and a
+significant amount of work needs to be done to get from Heliocentric
+geometric ecliptic coordinates to Geocentric apparent equatorial
+coordinates. Meeus' examples are embodied in F<t/meeus_25b.t> and
+F<t/meeus_33a.t>.
+
+For the Sun, the Perl implementation agrees pretty well with the worked
+example, differing by C<0.001> seconds of right ascension (B<not>
+seconds of arc), C<0.007> seconds of declination (seconds of arc) and
+C<1e-7> AU in radius.
+
+For Venus, the Perl implementation agrees less well with the worked
+example, differing by C<0.14> seconds of right ascension, C<0.07>
+seconds of declination, and C<5e-8> AU in radius. I have gone over the
+calculation step-by-step, and as of this writing most of the difference
+seems to come in at the computation of Geocentric ecliptic position from
+its Heliocentric Cartesian ecliptic position.  This is simply a square
+root and two C<atan2()> calls, and if it is subtly wrong some way I can
+not see it.
+
+Because these are the only two worked examples I found in Meeus, I felt
+the need to sanity-check the rest of the distribution in other ways.
+These tests are contained in the F<t/planet_*.t> test files.
+
+Rise and set times came from the United States Naval Observatory (USNO)
+Rise/Set/Transit Times for Major Solar System Bodies and Bright Stars
+page at L<http://aa.usno.navy.mil/data/docs/mrst.php>, and are given to
+the nearest minute. These models almost always reproduce the USNO's
+times in the cases tested. I have no idea how the USNO data are
+calculated or to what accuracy.
+
+Conjunctions and so forth came from Guy Ottewell's Astronomical Calendar
+at L<http://www.universalworkshop.com/>, and are given to the nearest
+hour. These models usually give the same. The 2018 edition also gives
+JDE dates for the phenomena to three decimal places, or an accuracy of
+about 90 seconds. These models typically are within about 10 minutes of
+the Ottewell figures. Again I have no idea how the Astronomical Calendar
+data are calculated or to what accuracy.
+
+=head1 USAGE
+
+This specific module is not intended to be used directly. Instead,
+subclass a member of the L<Astro::Coord::ECI|Astro::Coord::ECI>
+hierarchy and import methods from this module. In most cases this means
+whatever the C<:mixin> tag provides, though for the Sun the C<:sun> tag
+should be used instead. You must also provide a
+L<__model_definition()|/__model_definition> method that returns the
+model parameters you wish to implement. For the Sun, a
+L<__model()|/__model> method is also required, since the design of this
+distribution hangs the Earth's
+L<__model_definition()|/__model_definition> information on the Sun.
+
+But the end user does not do this either. Instead this distribution
+provides three such subclasses:
+
+=over
+
+=item L<Astro::Coord::ECI::VSOP87D::Sun|Astro::Coord::ECI::VSOP87D::Sun>
+
+This is a subclass of L<Astro::Coord::ECI::Sun|Astro::Coord::ECI::Sun>.
+The L<__model()|/__model> method (private to this distribution) simply
+returns zeroes. But this class carries the model parameters for the
+Earth, which are subtracted from whatever L<__model()|/__model> returns
+to get Geocentric coordinates.
+
+=item L<Astro::Coord::ECI::VSOP87D::_Inferior|Astro::Coord::ECI::VSOP87D::_Inferior>
+
+This is a subclass of L<Astro::Coord::ECI|Astro::Coord::ECI>, which
+pulls in everything relevant from this module (i.e. imports C<:mixin>),
+and provides almanac methods appropriate to inferior planets. Mercury
+and Venus are subclassed from this.
+
+=item L<Astro::Coord::ECI::VSOP87D::_Superior|Astro::Coord::ECI::VSOP87D::_Superior>
+
+This is a subclass of L<Astro::Coord::ECI|Astro::Coord::ECI>, which
+pulls in everything relevant from this module (i.e. imports C<:mixin>),
+and provides almanac methods appropriate to superior planets. Mars,
+Jupiter, Saturn, Uranus, and Neptune are subclassed from this.
+
+=back
 
 =head1 METHODS
 
 This module does not implement a class, and is better regarded as a
-mixin.  It supports the following methods, which are public and
+mixin. It supports the following methods, which are public and
 exportable unless documented otherwise.
 
 =head2 model_cutoff_definition
@@ -1011,10 +1126,10 @@ This method is exportable, either by name or via the C<:sun> tag.
  my ( $delta_psi, $delta_epsilon ) =
      $self->nutation( $dynamical_time, $cutoff );
 
-This subroutine (B<not> method) calculates the nutation in ecliptic
-longitude (C<$delta_psi>) and latitude (C<$delta_epsilon>) at the given
-dynamical time in seconds since the epoch (i.e. Perl time), according to
-the IAU 1980 model.
+This method calculates the nutation in ecliptic longitude
+(C<$delta_psi>) and latitude (C<$delta_epsilon>) at the given dynamical
+time in seconds since the epoch (i.e. Perl time), according to the IAU
+1980 model.
 
 The C<$time> argument is optional, and defaults to the object's current
 dynamical time.
@@ -1023,13 +1138,15 @@ The C<$cutoff> argument is optional; if specified as a number larger
 than C<0>, terms whose amplitudes are smaller than the nutation cutoff
 (in milli arc seconds) are ignored. The Meeus version of the algorithm
 is specified by a value of C<3>. The default is specified by the
-C<nutation_cutoff> attribute.
+L<nutation_cutoff|/nutation_cutoff> attribute.
 
-The model itself comes from Meeus chapter 22. The model parameters were
-not transcribed from that source, however, but were taken from the
-source IAU C reference implementation of the algorithm, F<src/nut80.c>,
-with the minimum modifications necessary to make the C code into Perl
-code. This file is contained in
+The model itself is the IAU 1980 nutation model. Later models exist, but
+this was chosen because of the desire to be compatible with Meeus'
+examples. The implementation itself actually comes from Meeus chapter
+22. The model parameters were not transcribed from that source, however,
+but were taken from the source IAU C reference implementation of the
+algorithm, F<src/nut80.c>, with the minimum modifications necessary to
+make the C code into Perl code. This file is contained in
 L<http://www.iausofa.org/2018_0130_C/sofa_c-20180130.tar.gz>.
 
 This method is exportable, either by name or via the C<:mixin> or
@@ -1082,6 +1199,8 @@ This method returns the synodic period of the object -- that is to say
 the mean interval between oppositions or conjunctions of superior
 planets or between corresponding conjunctions of inferior planets.
 
+This method is exportable, either by name or via the C<:mixin> tag.
+
 =head2 time_set
 
  $self->time_set()
@@ -1107,7 +1226,7 @@ C<:sun> tags.
 
 =head2 __get_attr
 
-This static method is B<private> to this package, and may be changed or
+This method is B<private> to this distribution, and may be changed or
 revoked without notice at any time. Documentation is for the benefit of
 the author.
 
@@ -1127,23 +1246,25 @@ the author.
 
 This static method executes the VSOP87D model returned by
 C<< $class->__model_definition() >>, and returns the computed state
-vector. The components of the state vector are Cartesian X, Y, and Z in
-kilometers, and the associated velocities in kilometers per second.
+vector. The components of the state vector are Heliocentric ecliptic
+longitude and latitude in radians, radius in AU, and the associated
+velocities in radians/day and AU/day.
 
 Additional optional arguments can be specified as name/value pairs. The
 following are defined:
 
 =over
 
-=item model_cutoff
-
-This is the model cutoff value. Terms whose amplitudes are less than this
-value are not used. The default is C<0>.
-
 =item debug
 
 If this Boolean argument is true, whatever debug data the author finds
-useful at the moment is written to standard error.
+useful at the moment is written to standard error. Only false values of
+this argument are supported.
+
+=item model_cutoff_definition
+
+This is the model cutoff definition hash to use in the computation. If
+unspecified the whole model is used.
 
 =back
 
@@ -1159,14 +1280,14 @@ revoked without notice at any time. Documentation is for the benefit of
 the author.
 
 This static method returns model-related information. The argument
-describes the information to return. The following are valid:
+describes the information to return. The following arguments are valid:
 
 =over
 
 =item default_model_cutoff
 
-This argument returns the default value of C<'model_cutoff_definition'> for a
-new object.
+This argument returns the default value of C<'model_cutoff_definition'>
+for a new object.
 
 =item model
 
@@ -1200,12 +1321,10 @@ C<T> is dynamical time in Julian millennia since J2000.0.
 =item sidereal_period
 
 This is the sidereal period in seconds, and is returned by period().
-=back
 
 =item tropical_period
 
-This is the tropical period, in seconds. As of this writing it is
-unused.
+This is the tropical period, in seconds, and is returned by year().
 
 =back
 
@@ -1223,9 +1342,9 @@ L<https://www.caglow.com/info/compute/vsop87>
 The author wishes to acknowledge and thank the following individuals and
 organizations.
 
-P. Bretagnon and G. Francou of the Bureau des Longitudes, Paris, France,
-whose VSOP87 solutions of planetary motion form the basis of these
-modules. Both the coefficients for the various VSOP87 models and a
+Pierre Bretagnon and Gerard Francou of the Bureau des Longitudes, Paris,
+France, whose VSOP87 solutions of planetary motion form the basis of
+these modules. Both the coefficients for the various VSOP87 models and a
 reference implementation in FORTRAN are available from
 L<http://cdsarc.u-strasbg.fr/viz-bin/qcat?VI/81/>. Without these, this
 module would not exist.
@@ -1237,9 +1356,9 @@ would never have been able to reduce the Heliocentric ecliptic
 coordinates generated by the VSOP87D models to Geocentric equatorial
 coordinates.
 
-The International Astronomical Union, whose SOFA software collection
-provided both coefficients and a reference implementation for the
-nutation calculation. Formal credit is given them under
+The International Astronomical Union (IAU), whose SOFA software
+collection provided both coefficients and a reference implementation for
+the nutation calculation. Formal credit is given them under
 L<COPYRIGHT AND LICENSE|/COPYRIGHT AND LICENSE>.
 
 Guy Ottewell, whose Astronomical Calendar has long been part of my life.

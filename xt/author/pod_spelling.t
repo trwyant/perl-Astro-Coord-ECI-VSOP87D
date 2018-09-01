@@ -20,11 +20,14 @@ all_pod_files_spelling_ok ();
 
 1;
 __DATA__
+barycentric
 Bretagnon
 des
+Fortran
 Francou
 FK
 IAU
+JDE
 Meeus
 merchantability
 milli
@@ -32,5 +35,7 @@ nutation
 Ottewell
 precession
 synodic
+truncations
+USNO
 VSOP
 Wyant

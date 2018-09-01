@@ -221,19 +221,42 @@ inherited from the superclass.
 This method reports, creates, and deletes model cutoff definitions.
 
 The first argument is the name of the model cutoff. If this is the only
-argument, a reference to a hash defining the named model cutoff is returned.
-This return is a deep clone of the actual definition.
+argument, a reference to a hash defining the named model cutoff is
+returned.  This return is a deep clone of the actual definition.
 
-If the second argument is C<undef>, the named model cutoff is deleted. If the
-model cutoff does not exist, the call does nothing. It is an error to try to
-delete built-in cutoffs C<'none'> and C<'Meeus'>.
+If the second argument is C<undef>, the named model cutoff is deleted.
+If the model cutoff does not exist, the call does nothing. It is an
+error to try to delete built-in cutoffs C<'none'> and C<'Meeus'>.
 
 If the second argument is a reference to a hash, this defines or
-redefines a model cutoff. The keys to the hash are the names of VSOP87D series
-(C<'L0'> through C<'L5'>, C<'B0'> through C<'B5'>, and C<'R0'> through
-C<'R5'>), and the value of each key is the number of terms of that
-series to use. If one of the keys is omitted or has a false value, that
-series is not used.
+redefines a model cutoff. The keys to the hash are the names of VSOP87D
+series (C<'L0'> through C<'L5'>, C<'B0'> through C<'B5'>, and C<'R0'>
+through C<'R5'>), and the value of each key is the number of terms of
+that series to use. If one of the keys is omitted or has a false value,
+that series is not used.
+
+If the second argument is a scalar, it is expected to be a number, and a
+model cutoff is generated consisting of all terms whose coefficient
+(C<'A'> in Meeus' terminology) is equal to or greater than the number.
+
+If the second argument is a code reference, this code is expected to
+return a reference to a valid model cutoff hash as described two
+paragraphs previously. Its arguments are the individual series hashes,
+extracted from the model. Each hash will have the following keys:
+
+=over
+
+=item series
+
+The name of the series (e.g. 'L0').
+
+=item terms
+
+An array reference containing the terms of the series.
+Each term is a reference to an array containing in order, in Meeus'
+terms, values C<'A'>, C<'B'>, and C<'C'>.
+
+=back
 
 =head2 next_quarter
 
@@ -278,16 +301,18 @@ The C<$time> argument is optional, and defaults to the object's current
 dynamical time.
 
 The C<$cutoff> argument is optional; if specified as a number larger
-than C<0>, terms whose amplitudes are smaller than the model cutoff (in
-milli arc seconds) are ignored. The Meeus version of the algorithm is
-specified by a value of C<3>. The default is specified by the
-L<nutation_cutoff()|/nutation_cutoff> value.
+than C<0>, terms whose amplitudes are smaller than the nutation cutoff
+(in milli arc seconds) are ignored. The Meeus version of the algorithm
+is specified by a value of C<3>. The default is specified by the
+L<nutation_cutoff|/nutation_cutoff> attribute.
 
-The model itself comes from Meeus chapter 22. The model parameters were
-not transcribed from that source, however, but were taken from the
-source IAU C reference implementation of the algorithm, F<src/nut80.c>,
-with the minimum modifications necessary to make the C code into Perl
-code. This file is contained in
+The model itself is the IAU 1980 nutation model. Later models exist, but
+this was chosen because of the desire to be compatible with Meeus'
+examples. The implementation itself actually comes from Meeus chapter
+22. The model parameters were not transcribed from that source, however,
+but were taken from the source IAU C reference implementation of the
+algorithm, F<src/nut80.c>, with the minimum modifications necessary to
+make the C code into Perl code. This file is contained in
 L<http://www.iausofa.org/2018_0130_C/sofa_c-20180130.tar.gz>.
 
 =head2 obliquity
