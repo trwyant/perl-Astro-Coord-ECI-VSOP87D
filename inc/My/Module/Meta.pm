@@ -19,7 +19,11 @@ sub new {
 
 sub build_requires {
     return +{
+	'File::Basename'	=> 0,
+	'File::Glob'	=> 0,
 	'Test::More'	=> 0.88,	# Because of done_testing().
+	'Time::Local'	=> 0,
+	'lib'		=> 0,
     };
 }
 
@@ -67,9 +71,18 @@ sub requires {
 ##  if ( ! $self->distribution() ) {
 ##  }
     return +{
+	'Astro::Coord::ECI'		=> 0,
+	'Astro::Coord::ECI::Mixin'	=> 0,
+	'Astro::Coord::ECI::Sun'	=> 0,
+	'Astro::Coord::ECI::Utils'	=> 0,
 	'Carp'		=> 0,
-	strict		=> 0,
-	warnings	=> 0,
+	'Exporter'	=> 0,
+	'POSIX'		=> 0,
+	'Storable'	=> 0,
+	'base'		=> 0,
+	'constant'	=> 0,
+	'strict'	=> 0,
+	'warnings'	=> 0,
 	@extra,
     };
 }
