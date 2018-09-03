@@ -348,6 +348,22 @@ EOD
 	rad2deg( $lambda ), rad2dms( $lambda ),
 	rad2deg( $beta ), rad2dms( $beta );
 
+    # NOTE: I could have stored the ecliptic coordinates at this point,
+    # and trusted Astro::Coord::ECI to get the conversion right, but
+    # since I was at this point not confident in that code, I decided to
+    # see Meeus' example all the way to the end.
+    #
+    # Once nutation and obliquity became methods, it turns out that my
+    # conversion between ecliptic and equatorial is equivalent to Meeus'
+    # to his accuracy in the examples. That is, if I store equatorial, I
+    # get back exactuly the same ecliptic coordiantes as I calculated
+    # above. If I store ecliptic, I get back the same equatorial that
+    # Meeus calculated.
+    #
+    # My current intent is to keep the code as-is, simply because for
+    # verification purposes I want it to be as close as possible to
+    # Meeus' example.
+
     my $sin_eps = sin $epsilon;
     my $cos_eps = cos $epsilon;
     my $sin_lam = sin $lambda;
