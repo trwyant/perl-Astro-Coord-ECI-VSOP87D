@@ -11,7 +11,7 @@ use Carp;
 use Exporter qw{ import };
 use Test::More 0.88;	# Because of done_testing();
 
-our $VERSION = '0.000_001';
+our $VERSION = '0.000_002';
 
 our @EXPORT = qw{
     is_au_au
