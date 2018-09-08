@@ -1,6 +1,8 @@
 Build.PL
 Changes
+eg/README
 eg/almanac
+eg/quarters
 inc/My/Module/Build.pm
 inc/My/Module/Meta.pm
 inc/My/Module/Test.pm
