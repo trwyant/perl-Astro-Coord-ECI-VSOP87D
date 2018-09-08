@@ -1,9 +1,10 @@
 This directory contains the following specimen files:
 
 almanac
-    This script computes almanac data for a given date and location,
-    defaulting to the current date and the White House, Washington DC.
-    The --help option gets you documentation.
+    This script computes almanac data for the given bodies, date, and
+    location. These default to all bodies, the current date, and the
+    White House, Washington D.C. USA. The --help option gets you
+    documentation.
 
 quarters
     This script computes conjunctions, elongations, oppositions, and

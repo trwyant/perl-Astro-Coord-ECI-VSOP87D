@@ -17,36 +17,36 @@ use Time::Local;
 
 our $VERSION = '0.000_002';
 
-Getopt::Long::Configure( 'pass_through' );	# Numbers may be negative.
+my %opt;
 
-my %opt = (
-    format => '%d-%b-%Y %H:%M:%S UT',
-);
+if ( $ENV{VSOP87D_ALMANAC_OPTIONS} ) {
+    require Text::ParseWords;
+    %opt = Text::ParseWords::shellwords( $ENV{VSOP87D_ALMANAC_OPTIONS} );
+}
+
+{
+    my %dflt = (
+	format		=> '%d-%b-%Y %H:%M:%S %Z',
+	height		=> 16.68,
+	latitude	=> 38.898748,
+	longitude	=> -77.037684,
+    );
+    foreach my $key ( keys %dflt ) {
+	defined $opt{$key}
+	    or $opt{$key} = $dflt{$key};
+    }
+}
 
 GetOptions( \%opt,
-    qw{ classic! date=s format=s iterate_for_quarters|iterate-for-quarters!
+    qw{ date=s format=s gmt!
+    height=f latitude=f longitude=f
     model=s tomorrow! },
     help => sub { pod2usage( { -verbose => 2 } ) },
 ) or pod2usage( { -verbose => 0 } );
 
-my $sun_class = $opt{classic} ? 'Astro::Coord::ECI::Sun' :
-    'Astro::Coord::ECI::VSOP87D::Sun';
-
-{
-    ( my $fn = "$sun_class.pm" ) =~ s< :: ></>smxg;
-    require $fn;
-}
-
-my @args = @ARGV;
-@args
-    or not defined $ENV{ALMANAC_POSITION}
-    or @args = split '\s+', $ENV{ALMANAC_POSITION};
-@args
-    or @args = ( 38.898748, -77.037684, 16.68 );
-
-# Stash position where it's convenient.
-
-my ( $lat, $lon, $hgt ) = @args;
+my @planets = @ARGV ? @ARGV : qw{
+    Sun Mercury Venus Mars Jupiter Saturn Uranus Neptune
+};
 
 # Start time is the previous midnight. Unless -tomorrow is set, in which
 # case it's the next midnight.
@@ -57,49 +57,51 @@ if ( defined $opt{date} ) {
     $start = Date::Manip::UnixDate( $opt{date}, '%s' )
 	or die "Invalid date $opt{date}\n";
 } else {
-    $start = timelocal (0, 0, 0, (localtime)[3 .. 5]);
+    my @t = $opt{gmt} ? gmtime : localtime;
+    $start = timelocal (0, 0, 0, @t[3 .. 5]);
     $start += 86400 if $opt{tomorrow};
 }
 
 # The end time is the start time + 1 day.
 
-my $end = $start + 86400;
+my $finish = $start + 86400;
 
 # Create an object representing our location. Remember that angles are
 # in radians, and distance in kilometers.
 
 my $loc = Astro::Coord::ECI->geodetic(
-    deg2rad( $lat ), deg2rad( $lon ), $hgt/1000 );
+    deg2rad( $opt{latitude} ),
+    deg2rad( $opt{longitude} ),
+    $opt{height}/1000,
+);
 
-# Generate the almanac data. We instantiate the luminary, call almanac()
-# on it, and then throw it away.
-
+# Generate the almanac data. We instantiate the body, call almanac() on
+# it, and then throw it away.
 
 my @almanac;
 
-push @almanac, $sun_class->new(
-    iterate_for_quarters	=> $opt{iterate_for_quarters},
-    station			=> $loc,
-)->almanac( $start, $end );
-
-foreach my $body ( qw{
-    Mercury Venus Mars Jupiter Saturn Uranus Neptune }
-) {
-    my $class = "Astro::Coord::ECI::VSOP87D::$body";
-    ( my $fn = "$class.pm" ) =~ s< :: ></>smxg;
-    require $fn;
-    push @almanac, $class->new(
-	station	=> $loc,
-    )->set( model_cutoff => 'Meeus' )->almanac( $start, $end );
+foreach my $body ( @planets ) {
+    eval {
+	$body =~ m/ \A _ /smx
+	    and die "Invalid planet name '$body'\n";
+	my $class = "Astro::Coord::ECI::VSOP87D::\L\u$body";
+	( my $fn = "$class.pm" ) =~ s< :: ></>smxg;
+	require $fn;
+	push @almanac, $class->new(
+	    station	=> $loc,
+	)->set( model_cutoff => 'Meeus' )->almanac( $start, $finish );
+	1;
+    } or warn $@;
 }
 
 # Display the time and the text description of the events, in order of
 # increasing time.
 
-print "$sun_class\n";
 foreach (sort {$a->[0] <=> $b->[0]} @almanac) {
-    print strftime( $opt{format}, gmtime $_->[0] ), '  ',
-	ucfirst ($_->[3]), "\n";
+    $opt{gmt}
+	and local $ENV{TZ} = 'GMT';
+    print strftime( $opt{format}, localtime $_->[0] ), '  ',
+	ucfirst $_->[3], "\n";
 }
 
 __END__
@@ -110,22 +112,13 @@ almanac - Generate almanac data for a given location
 
 =head1 SYNOPSIS
 
- almanac       # The White House by default
- almanac 52.07 4.29 4   # The Hague
+ almanac                        # The White House by default
+ almanac sun venus mars         # Only these bodies
+ almanac -latitude 52.07 -longitude 4.29 -height 4   # The Hague
  almanac -help
  almanac -version
 
 =head1 OPTIONS
-
-=head2 -classic
-
-If this Boolean option is asserted,
-L<Astro::Coord::ECI::Sun|Astro::Coord::ECI::Sun> is used for the
-Sun. Otherwise
-L<Astro::Coord::ECI::VSOP87D::Sun|Astro::Coord::ECI::VSOP87D::Sun> is
-used.
-
-The default is C<-noclassic>.
 
 =head2 -date=date_string
 
@@ -137,16 +130,46 @@ ignored.
 =head2 -format=strftime_format
 
 This option specifies the C<strftime> format used to display dates and
-times. The default is C<'%d-%b-%Y %H:%M:%S'>.
+times.
+
+The default is C<-format '%d-%b-%Y %H:%M:%S %Z'>.
+
+=head2 -gmt
+
+If asserted, this Boolean option attempts to display the time in GMT.
+All that it really does is
+
+ local $ENV{TZ} = 'GMT';
+
+which may or may not have the desired effect.
+
+The default is C<-nogmt>.
 
 =head2 -help
 
 This option displays the documentation for this script. The script then
 exits.
 
+=head2 -latitude
+
+This option specifies the latitude of the observer north of the Equator,
+in degrees.
+
+The default is C<latitude 38.898748>.
+
+=head2 -longitude
+
+This option specifies the longitude of the observer east of Greenwich,
+in degrees.  West longitudes are negative.
+
+The default is C<longitude -77.037684>
+
 =head2 -tomorrow
 
-Display data for tomorrow, rather than today.
+This Boolean option causes the date to be tomorrow rather than today. It
+is ignored if C<-date> is specified.
+
+The default is C<-notomorrow>.
 
 =head2 -version
 
@@ -164,8 +187,37 @@ White House in Washington DC USA is used.
 
 You can look a day ahead by specifying C<-tomorrow>.
 
-The format of the time output can be specified using the C<-format>
-option.
+B<Note> that unless C<-gmt> is asserted, displayed times are local to
+the system executing the script, B<not> to the location specified by the
+C<-latitude> and C<-longitude> options.
+
+=head1 ENVIRONMENT
+
+The operation of this script is affected by the following environment
+variables:
+
+=head2 VSOP87D_ALMANAC_OPTIONS
+
+This environment variable contains option names and values. These are
+parsed out using C<Text::QuoteWords::shellwords()>.
+
+Option names must be specified in full, without leading dashes.
+
+Option values must be separate tokens, and may not be specified with
+C<name=value> syntax.
+
+Boolean options must be specified with a value of C<1> (true) or C<0>
+(false).
+
+For example, the value
+
+ format '%Y-%m-%d %H:%M:%S' gmt 1
+
+is equivalent to specifying
+
+ -format '%Y-%m-%d %H:%M:%S' -gmt
+
+on the command line.
 
 =head1 AUTHOR
 

@@ -18,7 +18,7 @@ my %opt = (
 );
 
 GetOptions( \%opt,
-    qw{ days=i format=s local_time|local-time! start=s },
+    qw{ days=i format=s gmt! start=s },
     help => sub { pod2usage( { -verbose => 2 } ) },
 ) or pod2usage( { -verbose => 0 } );
 
@@ -30,20 +30,11 @@ my $start;
 if ( $opt{start} ) {
     require Date::Manip;
     $start = Date::Manip::UnixDate( '%s', $opt{start} )
-	or die "Invalid start date\n";
+	or die "Invalid start date $opt{start}\n";
 } else {
     $start = time;
 }
 my $finish = $start + SECSPERDAY * $opt{days};
-
-my $format = $opt{format};
-{
-    my %subs;
-    @subs{ qw< Z z > } = $opt{local_time} ?
-	local_zone( qw< Z z > ) :
-	( qw< GMT +0000 > );
-    $format =~ s/ (?: \A | (?<! % ) ) % ( [Zz] ) \b /$subs{$1}/smxg;
-}
 
 my @events;
 
@@ -70,15 +61,9 @@ foreach (
     sort { $a->[0] <=> $b->[0] } @events
 ) {
     local $\ = "\n";
-    print strftime(
-	$format, $opt{local_time} ? localtime $_->[0] : gmtime $_->[0] )
-	, '  ', $_->[1];
-}
-
-sub local_zone {
-    my @arg = @_;
-    my @t = localtime;
-    return( map { strftime( "%$_", @t ) } @arg );
+    $opt{gmt}
+	and local $ENV{TZ} = 'GMT';
+    print strftime( $opt{format}, localtime $_->[0] ), '  ', $_->[1];
 }
 
 __END__
@@ -111,19 +96,23 @@ The default is C<-days 30>.
 This option specifies the C<strftime (3)> format used to display the
 time.
 
-The default is C<%d-%b-%Y %H:%M:%S %Z>.
+The default is C<-format '%d-%b-%Y %H:%M:%S %Z'>.
+
+=head2 -gmt
+
+If asserted, this Boolean option attempts to display the time in GMT.
+All that it really does is
+
+ local $ENV{TZ} = 'GMT';
+
+which may or may not have the desired effect.
+
+The default is C<-nogmt>.
 
 =head2 -help
 
 This option displays the documentation for this script. The script then
 exits.
-
-=head2 -local-time
-
-If this Boolean option is asserted, time is displayed in local time.
-Otherwise it is displayed in GMT.
-
-The default is C<-nolocal-time>.
 
 =head2 -start
 
@@ -144,6 +133,8 @@ This Perl script calculates the quarters for the bodies specified on the
 command line, or for all bodies if none are specified. The command line
 is not case-sensitive, but must specify bodies supported by
 L<Astro::Coord::ECI::VSOP87D|Astro::Coord::ECI::VSOP87D>.
+
+The times displayed are local unless C<-gmt> is asserted.
 
 =head1 AUTHOR
 
