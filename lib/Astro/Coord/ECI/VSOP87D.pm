@@ -43,20 +43,16 @@ our @EXPORT_OK = (
 	geometric_longitude
 	synodic_period
 	__angle_subtended_from_earth
-	__horizon_name
 	__longitude_from_sun
 	__model
-	__transit_name
     },
 );
 our %EXPORT_TAGS = (
     mixin	=> [ @basic_export, qw{
 	synodic_period
 	__angle_subtended_from_earth
-	__horizon_name
 	__longitude_from_sun
 	__model
-	__transit_name
     } ],
     sun		=> [ @basic_export, qw{ geometric_longitude } ],
 );
@@ -432,19 +428,6 @@ sub geometric_longitude {
     defined $attr->{geometric_longitude}
 	and return $attr->{geometric_longitude};
     croak 'Geometric longitude undefined -- time not set';
-}
-
-{
-    my @default_name = (
-	'%s sets',
-	'%s rises',
-    );
-
-    sub __horizon_name {
-	my ( $self, $event, $name ) = @_;
-	$name ||= \@default_name;
-	return sprintf $name->[$event], $self->get( 'name' );
-    }
 }
 
 sub __longitude_from_sun {
@@ -908,21 +891,6 @@ sub period {
 sub synodic_period {
     my ( $self ) = @_;
     return( 1 / abs( 1 / $self->get( 'sun' )->year() - 1 / $self->year() ) );
-}
-
-{
-    my @default_name = (
-	undef,
-	'%s transits meridian',
-    );
-
-    sub __transit_name {
-	my ( $self, $event, $name ) = @_;
-	$name ||= \@default_name;
-	defined $name->[$event]
-	    or return undef;	## no critic (ProhibitExplicitReturnUndef)
-	return sprintf $name->[$event], $self->get( 'name' );
-    }
 }
 
 sub year {

@@ -144,19 +144,15 @@ sub next_quarter {
     return( $rslt, $quarter, $self->__quarter_name( $quarter ) );
 }
 
-{
-    my @default_name = (
+sub __quarter_name {
+    my ( $self, $event, $name ) = @_;
+    $name ||= [
 	'%s conjunction',
 	'%s west quadrature',
 	'%s opposition',
 	'%s east quadrature',
-    );
-
-    sub __quarter_name {
-	my ( $self, $event, $name ) = @_;
-	$name ||= \@default_name;
-	return sprintf $name->[$event], $self->get( 'name' );
-    }
+    ];
+    return sprintf $name->[$event], $self->get( 'name' );
 }
 
 {
