@@ -7,7 +7,7 @@ use warnings;
 
 use base qw{ Astro::Coord::ECI::VSOP87D::_Superior };
 
-our $VERSION = '0.000_002';
+our $VERSION = '0.000_01';
 
 sub __model_definition {
     my ( undef, $key ) = @_;
