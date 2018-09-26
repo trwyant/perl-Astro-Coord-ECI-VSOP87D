@@ -1,2 +1,9 @@
+0.000_02	2018-09-26	T. R. Wyant
+    Fix compile failures under older Perls which objected to me trying
+    to force a constant into a different name space.
+
+    There were also warnings about '-PIOVER2' being ambiguous, which were
+    fixed by making it '- PIOVER2'.
+
 0.000_01	2018-09-25	T. R. Wyant
     Initial CPAN release.

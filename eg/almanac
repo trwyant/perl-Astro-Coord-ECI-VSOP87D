@@ -15,7 +15,7 @@ use Pod::Usage;
 use POSIX qw{ strftime };
 use Time::Local;
 
-our $VERSION = '0.000_01';
+our $VERSION = '0.000_02';
 
 my %opt;
 
