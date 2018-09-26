@@ -22,7 +22,10 @@ our @EXPORT = qw{
     washington_dc
 };
 
-use constant 'Astro::Coord::ECI::VSOP87D::DEBUG' => $ENV{VSOP87D_DEBUG};
+{
+    package Astro::Coord::ECI::VSOP87D;
+    use constant DEBUG => $ENV{VSOP87D_DEBUG};
+}
 
 sub is_au_au ($$$$) {
     my ( $got, $want, $dp, $title ) = @_;

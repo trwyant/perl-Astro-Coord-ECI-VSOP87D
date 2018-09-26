@@ -95,7 +95,7 @@ sub next_quarter {
 	},
 	sub {	# 1 = west quadrature
 	    my ( $time ) = @_;
-	    return $self->__longitude_from_sun( $time, -PIOVER2 ) < 0 ? 1 : 0;
+	    return $self->__longitude_from_sun( $time, - PIOVER2 ) < 0 ? 1 : 0;
 	},
 	sub {	# 2 = opposition
 	    my ( $time ) = @_;
