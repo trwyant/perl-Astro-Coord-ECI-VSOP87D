@@ -7,7 +7,7 @@ use warnings;
 
 use base qw{ [% superclass %] };
 
-our $VERSION = '0.000_02';
+our $VERSION = '0.001';
 
 sub __model_definition {
     my ( undef, $key ) = @_;
