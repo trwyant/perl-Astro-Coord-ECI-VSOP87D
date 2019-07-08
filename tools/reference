@@ -76,10 +76,10 @@ reference - Produce output corresponding to VSOP87D reference implementation
 
 This option specifies the body whose state vector is to be computed.
 Possible values are class names in this package, with the leading
-C<Astro::Coord::ECI::VSOP87A::> stripped. C<'Earth'> is special-cased.
+C<Astro::Coord::ECI::VSOP87D::> stripped. C<'Earth'> is special-cased.
 Its model lives in
-L<Astro::Coord::ECI::VSOP87A|Astro::Coord::ECI::VSOP87A> itself, since
-VSOP87A is a Heliocentric model and we need to subtract the position of
+L<Astro::Coord::ECI::VSOP87D|Astro::Coord::ECI::VSOP87D> itself, since
+VSOP87D is a Heliocentric model and we need to subtract the position of
 the Earth to get a geocentric position.
 
 The argument is case-insensitive, but only bodies actually implemented

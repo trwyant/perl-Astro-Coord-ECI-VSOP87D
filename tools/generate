@@ -14,7 +14,7 @@ our $VERSION = '0.001';
 
 my %opt = (
     model	=> 'vsop87d',
-    template	=> 'tools/template.pm',
+    template	=> 'tools/template.tpl',
 );
 
 GetOptions( \%opt,
@@ -500,7 +500,7 @@ This option specifies the template file to use to generate the planet's
 module. If a false value is specified, no module is generated, and the
 model is written to standard out.
 
-The default is C<-template tools/template.pm>.
+The default is C<-template tools/template.tpl>.
 
 =head2 -version
 
