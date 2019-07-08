@@ -1,2 +1,5 @@
+0.001_01	2019-07-08	T. R. Wyant
+    Fix broken POD links and add test to ensure they stay fixed.
+
 0.001		2018-10-03	T. R. Wyant
     Initial production release.
