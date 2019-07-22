@@ -15,7 +15,7 @@ use Astro::Coord::ECI::Utils qw{ PI PIOVER2 find_first_true mod2pi };
 use Astro::Coord::ECI::VSOP87D qw{ :mixin };
 use Carp;
 
-our $VERSION = '0.001_01';
+our $VERSION = '0.001_02';
 
 sub new {
     my ( $class, %arg ) = @_;
