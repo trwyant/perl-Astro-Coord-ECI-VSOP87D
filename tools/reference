@@ -15,10 +15,8 @@ my %opt = (
     body	=> 'Earth',
 );
 
-my %valid_model = map { $_ => 1 } qw{ A B C D E };
-
 GetOptions( \%opt,
-    qw{ body=s debug! model=s },
+    qw{ body=s debug! },
     help => sub { pod2usage( { -verbose => 2 } ) },
 ) or pod2usage( { -verbose => 0 } );
 $opt{body} = ucfirst lc $opt{body};
