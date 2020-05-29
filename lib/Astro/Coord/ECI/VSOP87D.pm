@@ -5,6 +5,8 @@ use 5.008;
 use strict;
 use warnings;
 
+use utf8;
+
 use Astro::Coord::ECI::Utils qw{
     AU PI SECSPERDAY TWOPI
     asin deg2rad jcent2000 julianday

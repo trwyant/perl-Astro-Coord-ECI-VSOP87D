@@ -82,6 +82,7 @@ sub requires {
 	'base'		=> 0,
 	'constant'	=> 0,
 	'strict'	=> 0,
+	'utf8'		=> 0,
 	'warnings'	=> 0,
 	@extra,
     };
