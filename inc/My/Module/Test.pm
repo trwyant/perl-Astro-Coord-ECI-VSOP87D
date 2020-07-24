@@ -5,10 +5,6 @@ use 5.008;
 use strict;
 use warnings;
 
-# OK, the following is probably paranoia. But if Perl 7 decides to
-# change this particular default I'm ready. Unless they eliminate $].
-no if $] ge '5.020', feature => qw{ signatures };
-
 use Astro::Coord::ECI;
 use Astro::Coord::ECI::Utils qw{ AU deg2rad rad2deg };
 use Carp;
@@ -31,7 +27,7 @@ our @EXPORT = qw{
     use constant DEBUG => $ENV{VSOP87D_DEBUG};
 }
 
-sub is_au_au ($$$$) {
+sub is_au_au {
     my ( $got, $want, $dp, $title ) = @_;
     my $tplt = "%.${dp}f";
     @_ = (
@@ -42,12 +38,12 @@ sub is_au_au ($$$$) {
     goto &is;
 }
 
-sub is_km_au ($$$$) {
+sub is_km_au {
     splice @_, 0, 1, $_[0] / AU;
     goto &is_au_au;
 }
 
-sub is_rad_deg ($$$$) {
+sub is_rad_deg {
     my ( $got, $want, $dp, $title ) = @_;
     my $tplt = "%.${dp}f";
     @_ = (
