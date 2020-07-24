@@ -1,3 +1,6 @@
+0.002_03	2020-07-24	T. R. Wyant
+    Eliminate prototyped testing routines.
+
 0.002_02	2020-07-24	T. R. Wyant
     Test quadmath the same as longdouble. Thanks to Chris Williams
     (BINGOS) for finding this.
