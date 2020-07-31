@@ -1,13 +1,8 @@
-0.002_03	2020-07-24	T. R. Wyant
+0.003		2020-07-31	T. R. Wyant
     Eliminate prototyped testing routines.
 
-0.002_02	2020-07-24	T. R. Wyant
     Test quadmath the same as longdouble. Thanks to Chris Williams
     (BINGOS) for finding this.
-
-0.002_01	2020-07-20	T. R. Wyant
-    Disable signatures in My::Module::Test because it uses old-style
-    prototypes.
 
     Remove -model option from tools/reference since we only implement
     'D'.

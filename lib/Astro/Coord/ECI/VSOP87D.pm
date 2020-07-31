@@ -28,7 +28,7 @@ BEGIN {
 	or constant->import( DEBUG => 0 );
 }
 
-our $VERSION = '0.002_03';
+our $VERSION = '0.003';
 
 my @basic_export = qw{
     SUN_CLASS
