@@ -906,7 +906,7 @@ __END__
 
 =head1 NAME
 
-Astro::Coord::ECI::VSOP87D - Implement the VSOP87D position model.
+Astro::Coord::ECI::VSOP87D - Implement the VSOP87D planetary position model.
 
 =head1 SYNOPSIS
 
@@ -1359,7 +1359,8 @@ for daily events involving astronomical bodies.
 =head1 SUPPORT
 
 Support is by the author. Please file bug reports at
-L<http://rt.cpan.org>, or in electronic mail to the author.
+L<https://github.com/trwyant/perl-Astro-Coord-ECI-VSOP87D/issues>, or in
+electronic mail to the author.
 
 =head1 AUTHOR
 

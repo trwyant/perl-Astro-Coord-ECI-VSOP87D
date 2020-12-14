@@ -27,7 +27,7 @@ __END__
 
 =head1 NAME
 
-My::Module::Build - Extend Module::Build for Astro::Coord::ECI::VSOP87A
+My::Module::Build - Extend Module::Build for Astro::Coord::ECI::VSOP87D
 
 =head1 SYNOPSIS
 
@@ -70,7 +70,8 @@ C<--test_files> argument.
 =head1 SUPPORT
 
 Support is by the author. Please file bug reports at
-L<http://rt.cpan.org>, or in electronic mail to the author.
+L<https://github.com/trwyant/perl-Astro-Coord-ECI-VSOP87D/issues>, or in
+electronic mail to the author.
 
 =head1 AUTHOR
 
