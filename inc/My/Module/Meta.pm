@@ -19,6 +19,7 @@ sub new {
 
 sub build_requires {
     return +{
+	'Config'		=> 0,
 	'File::Basename'	=> 0,
 	'File::Glob'	=> 0,
 	'Test::More'	=> 0.88,	# Because of done_testing().
