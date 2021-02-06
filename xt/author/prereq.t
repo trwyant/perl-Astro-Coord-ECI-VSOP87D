@@ -13,10 +13,6 @@ eval {
 } or plan skip_all => 'Test::Prereq::Meta not available';
 
 Test::Prereq::Meta->new(
-    accept	=> [ qw{
-	Astro::Coord::ECI::VSOP87D::_Inferior
-	Astro::Coord::ECI::VSOP87D::_Superior
-	} ],
 )->all_prereq_ok();
 
 done_testing;
