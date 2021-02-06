@@ -16,7 +16,6 @@ Test::Prereq::Meta->new(
     accept	=> [ qw{
 	Astro::Coord::ECI::VSOP87D::_Inferior
 	Astro::Coord::ECI::VSOP87D::_Superior
-	My::Module::Test
 	} ],
 )->all_prereq_ok();
 
