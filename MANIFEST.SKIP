@@ -19,7 +19,6 @@ CVS/
 ^ref/
 \.svn/
 \.swp$
-^.travis.yml$
 ^tools/ref-data
 ^TODO$
 ^xt/author/optionals/
