@@ -6,7 +6,7 @@ use strict;
 use warnings;
 
 use Astro::Coord::ECI;
-use Astro::Coord::ECI::Utils qw{ AU deg2rad rad2deg };
+use Astro::Coord::ECI::Utils qw{ AU deg2rad gm_strftime rad2deg };
 use Carp;
 use Exporter qw{ import };
 use Test::More 0.88;	# Because of done_testing();
@@ -56,12 +56,12 @@ sub is_rad_deg {
 
 sub strftime_h {
     my ( $time ) = @_;
-    return POSIX::strftime( '%Y-%m-%d %H', gmtime( $time + 1800 ) );
+    return gm_strftime( '%Y-%m-%d %H', $time + 1800 );
 }
 
 sub strftime_m {
     my ( $time ) = @_;
-    return POSIX::strftime( '%Y-%m-%d %H:%M', gmtime( $time + 30 ) );
+    return gm_strftime( '%Y-%m-%d %H:%M', $time + 30 );
 }
 
 sub washington_dc {
