@@ -13,7 +13,7 @@ use Astro::Coord::ECI::VSOP87D qw{ :sun };
 
 use Carp;
 
-our $VERSION = '0.006_02';
+our $VERSION = '0.007';
 
 sub new {
     my ( $class, %arg ) = @_;
