@@ -91,7 +91,7 @@ EOD
     if ( $sun->isa( SUN_CLASS ) ) {
 	# We call __model as a subroutine because the Earth's model
 	# parameters are hung on the Sun, but if we call it as a method
-	# we get the Sun's model, which always returns zeroes.
+	# we get the Sun's model, which always returns zeros.
 	( $Le, $Be, $Re ) = __model( SUN_CLASS, $time,
 	    model_cutoff_definition	=> $sun->model_cutoff_definition( $cutoff ),
 	);
@@ -1026,7 +1026,7 @@ provides three such subclasses:
 
 This is a subclass of L<Astro::Coord::ECI::Sun|Astro::Coord::ECI::Sun>.
 The L<__model()|/__model> method (private to this distribution) simply
-returns zeroes. But this class carries the model parameters for the
+returns zeros. But this class carries the model parameters for the
 Earth, which are subtracted from whatever L<__model()|/__model> returns
 to get Geocentric coordinates.
 
