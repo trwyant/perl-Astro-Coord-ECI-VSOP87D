@@ -18,8 +18,8 @@ lib/Astro/Coord/ECI/VSOP87D/Saturn.pm
 lib/Astro/Coord/ECI/VSOP87D/Sun.pm
 lib/Astro/Coord/ECI/VSOP87D/Uranus.pm
 lib/Astro/Coord/ECI/VSOP87D/Venus.pm
-LICENSES/Artistic
-LICENSES/Copying
+LICENSE-Artistic
+LICENSE-GPL
 Makefile.PL
 MANIFEST
 META.json
