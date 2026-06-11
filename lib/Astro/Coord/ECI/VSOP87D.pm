@@ -1357,8 +1357,7 @@ for daily events involving astronomical bodies.
 =head1 SUPPORT
 
 Support is by the author. Please file bug reports at
-L<https://rt.cpan.org/Public/Dist/Display.html?Name=Astro-Coord-ECI-VSOP87D>,
-L<https://github.com/trwyant/perl-Astro-Coord-ECI-VSOP87D/issues>, or in
+L<https://github.com/trwyant/perl-Astro-Coord-ECI-VSOP87D/issues> or in
 electronic mail to the author.
 
 =head1 AUTHOR

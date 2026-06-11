@@ -69,7 +69,7 @@ L<Astro::Coord::ECI::VSOP87D|Astro::Coord::ECI::VSOP87D>
 =head1 SUPPORT
 
 Support is by the author. Please file bug reports at
-L<https://github.com/trwyant/perl-Astro-Coord-ECI-VSOP87D/issues>, or in
+L<https://github.com/trwyant/perl-Astro-Coord-ECI-VSOP87D/issues> or in
 electronic mail to the author.
 
 =head1 AUTHOR
