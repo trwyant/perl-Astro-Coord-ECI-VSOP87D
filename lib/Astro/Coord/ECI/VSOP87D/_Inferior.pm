@@ -308,8 +308,8 @@ examples. The implementation itself actually comes from Meeus chapter
 22. The model parameters were not transcribed from that source, however,
 but were taken from the source IAU C reference implementation of the
 algorithm, F<src/nut80.c>, with the minimum modifications necessary to
-make the C code into Perl code. This file is contained in
-L<http://www.iausofa.org/2018_0130_C/sofa_c-20180130.tar.gz>.
+make the C code into Perl code. This file can be obtained as part of a
+tarball from L<https://www.iausofa.org/2023-10-11c>.
 
 =head2 obliquity
 

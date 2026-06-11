@@ -452,7 +452,7 @@ BEGIN {
     my @model = (
 
 	# The following are from the IAU SOFA module src/nut80.c, from
-	# http://www.iausofa.org/2018_0130_C/sofa_c-20180130.tar.gz
+	# https://www.iausofa.org/2023-10-11c
 	# The only edit is the change from curly to square brackets and
 	# the brute-force conversion of C comments to Perl comments. The
 	# columns are:
@@ -1130,8 +1130,8 @@ examples. The implementation itself actually comes from Meeus chapter
 22. The model parameters were not transcribed from that source, however,
 but were taken from the source IAU C reference implementation of the
 algorithm, F<src/nut80.c>, with the minimum modifications necessary to
-make the C code into Perl code. This file is contained in
-L<http://www.iausofa.org/2018_0130_C/sofa_c-20180130.tar.gz>.
+make the C code into Perl code. This file can be obtained as part of a
+tarball from L<https://www.iausofa.org/2023-10-11c>.
 
 This method is exportable, either by name or via the C<:mixin> or
 C<:sun> tags.
